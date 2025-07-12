@@ -20,12 +20,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BitEU"
             VALUE "FileDescription", "Windows Terminal Spreadsheet Calculator"
-            VALUE "FileVersion", "0.8.0"
+            VALUE "FileVersion", "0.8.3"
             VALUE "InternalName", "wtsc"
             VALUE "LegalCopyright", "Copyright (c) 2025"
             VALUE "OriginalFilename", "wtsc.exe"
             VALUE "ProductName", "WinSpread"
-            VALUE "ProductVersion", "0.8.0"
+            VALUE "ProductVersion", "0.8.3"
         END
     END
     BLOCK "VarFileInfo"

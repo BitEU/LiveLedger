@@ -639,7 +639,4 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 - Inspired by classical spreadsheet applications like VisiCalc and sc-im
 - Vi-style navigation inspired by Vim text editor
 - Built with the Windows Console API for optimal terminal performance
-
----
-
-*WinSpread - Party like it's 1979*
+- A lot of inspiration taken from MS Excel, the lifeblood of the global economy

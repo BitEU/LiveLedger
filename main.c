@@ -17,7 +17,8 @@ typedef enum {
     MODE_INSERT_STRING,
     MODE_INSERT_FORMULA,
     MODE_COMMAND,
-    MODE_RANGE_SELECT  // NEW: Range selection mode
+    MODE_RANGE_SELECT,  // NEW: Range selection mode
+    MODE_EDIT          // NEW: Edit existing cell mode
 } AppMode;
 
 // Undo/Redo system
@@ -132,6 +133,7 @@ void app_render(AppState* state);
 void app_handle_input(AppState* state, KeyEvent* key);
 void app_execute_command(AppState* state, const char* command);
 void app_start_input(AppState* state, AppMode mode);
+void app_start_edit(AppState* state);
 void app_finish_input(AppState* state);
 void app_cancel_input(AppState* state);
 void app_update_cursor_blink(AppState* state);
@@ -220,103 +222,6 @@ void app_init(AppState* state) {
     state->cursor_blink_rate = 500;
     
     console_hide_cursor(state->console);
-    
-    // Add enhanced sample data with formatting examples
-    sheet_set_string(state->sheet, 0, 0, "Enhanced LiveLedger Features");
-    
-    sheet_set_string(state->sheet, 2, 0, "NEW FEATURES:");
-    sheet_set_string(state->sheet, 3, 0, "Range Selection: Shift+arrows");
-    sheet_set_string(state->sheet, 4, 0, "Range Copy/Paste: Ctrl+C/V on ranges");
-    sheet_set_string(state->sheet, 5, 0, "Cell Formatting: :format commands");
-    sheet_set_string(state->sheet, 6, 0, "VLOOKUP function support");
-    
-    sheet_set_string(state->sheet, 8, 0, "Formatting Examples:");
-    
-    // Number formatting examples
-    sheet_set_string(state->sheet, 9, 0, "Percentage:");
-    sheet_set_number(state->sheet, 9, 1, 0.1234);
-    Cell* pct_cell = sheet_get_or_create_cell(state->sheet, 9, 1);
-    cell_set_format(pct_cell, FORMAT_PERCENTAGE, 0);
-    
-    sheet_set_string(state->sheet, 10, 0, "Currency:");
-    sheet_set_number(state->sheet, 10, 1, 1234.56);
-    Cell* curr_cell = sheet_get_or_create_cell(state->sheet, 10, 1);
-    cell_set_format(curr_cell, FORMAT_CURRENCY, 0);
-    
-    sheet_set_string(state->sheet, 11, 0, "Date:");
-    sheet_set_number(state->sheet, 11, 1, 45000); // Excel date serial
-    Cell* date_cell = sheet_get_or_create_cell(state->sheet, 11, 1);
-    cell_set_format(date_cell, FORMAT_DATE, DATE_STYLE_MM_DD_YYYY);
-    
-    sheet_set_string(state->sheet, 12, 0, "Time:");
-    sheet_set_number(state->sheet, 12, 1, 0.5); // 12:00 PM
-    Cell* time_cell = sheet_get_or_create_cell(state->sheet, 12, 1);
-    cell_set_format(time_cell, FORMAT_TIME, TIME_STYLE_12HR);
-    
-    // VLOOKUP example
-    sheet_set_string(state->sheet, 14, 0, "VLOOKUP Example:");
-    sheet_set_string(state->sheet, 15, 0, "Product");
-    sheet_set_string(state->sheet, 15, 1, "Price");
-    sheet_set_string(state->sheet, 16, 0, "Apple");
-    sheet_set_number(state->sheet, 16, 1, 0.50);
-    sheet_set_string(state->sheet, 17, 0, "Orange");
-    sheet_set_number(state->sheet, 17, 1, 0.75);
-    sheet_set_string(state->sheet, 18, 0, "Banana");
-    sheet_set_number(state->sheet, 18, 1, 0.30);
-    
-    sheet_set_string(state->sheet, 20, 0, "Lookup 'Orange':");
-    sheet_set_formula(state->sheet, 20, 1, "=VLOOKUP(\"Orange\",A16:B18,2,1)");
-      // Commands help
-    sheet_set_string(state->sheet, 22, 0, "Format Commands:");
-    sheet_set_string(state->sheet, 23, 0, ":format percentage");
-    sheet_set_string(state->sheet, 24, 0, ":format currency");
-    sheet_set_string(state->sheet, 25, 0, ":format date");
-    sheet_set_string(state->sheet, 26, 0, ":format time");
-    sheet_set_string(state->sheet, 27, 0, ":format general");
-    
-    // NEW: Color and resize commands help
-    sheet_set_string(state->sheet, 29, 0, "Color Commands:");
-    sheet_set_string(state->sheet, 30, 0, ":clrtx red (or #FF0000)");
-    sheet_set_string(state->sheet, 31, 0, ":clrbg blue (or #0000FF)");
-    
-    sheet_set_string(state->sheet, 33, 0, "Resize Commands:");
-    sheet_set_string(state->sheet, 34, 0, "Alt+Left/Right: Column width");
-    sheet_set_string(state->sheet, 35, 0, "Alt+Up/Down: Row height");
-    sheet_set_string(state->sheet, 36, 0, "Works with range selection!");
-    
-    sheet_set_string(state->sheet, 38, 0, "Colors: black, blue, green, cyan");
-    sheet_set_string(state->sheet, 39, 0, "        red, magenta, yellow, white");
-
-    // Chart commands help
-    sheet_set_string(state->sheet, 42, 0, "Chart Commands:");
-    sheet_set_string(state->sheet, 43, 0, ":line [x_label] [y_label]");
-    sheet_set_string(state->sheet, 44, 0, ":bar [x_label] [y_label]");
-    sheet_set_string(state->sheet, 45, 0, ":pie (for pie charts)");
-    sheet_set_string(state->sheet, 46, 0, ":scatter [x_label] [y_label]");
-    
-    // Sample data for charts
-    sheet_set_string(state->sheet, 48, 0, "Chart Example Data:");
-    sheet_set_string(state->sheet, 49, 0, "Month");
-    sheet_set_string(state->sheet, 49, 1, "Sales");
-    sheet_set_string(state->sheet, 49, 2, "Costs");
-    
-    sheet_set_string(state->sheet, 50, 0, "Jan");
-    sheet_set_number(state->sheet, 50, 1, 1200);
-    sheet_set_number(state->sheet, 50, 2, 800);
-    
-    sheet_set_string(state->sheet, 51, 0, "Feb");
-    sheet_set_number(state->sheet, 51, 1, 1500);
-    sheet_set_number(state->sheet, 51, 2, 900);
-    
-    sheet_set_string(state->sheet, 52, 0, "Mar");
-    sheet_set_number(state->sheet, 52, 1, 1800);
-    sheet_set_number(state->sheet, 52, 2, 1000);
-    
-    sheet_set_string(state->sheet, 53, 0, "Apr");
-    sheet_set_number(state->sheet, 53, 1, 2100);
-    sheet_set_number(state->sheet, 53, 2, 1100);
-    
-    sheet_set_string(state->sheet, 55, 0, "Try: Select A49:C53, then :line Month Revenue");
     
     sheet_recalculate(state->sheet);
     debug_log("app_init completed successfully");
@@ -624,6 +529,39 @@ void app_start_input(AppState* state, AppMode mode) {
     }
 }
 
+// NEW: Start edit mode - pre-fills buffer with current cell content
+void app_start_edit(AppState* state) {
+    Cell* cell = sheet_get_cell(state->sheet, state->cursor_row, state->cursor_col);
+    
+    state->mode = MODE_EDIT;
+    state->input_buffer[0] = '\0';
+    state->input_pos = 0;
+    
+    state->cursor_blink_rate = 300;
+    state->cursor_visible = TRUE;
+    state->cursor_blink_time = GetTickCount();
+    
+    // Pre-fill buffer with current cell content
+    if (cell) {
+        switch (cell->type) {
+            case CELL_FORMULA:
+                strcpy_s(state->input_buffer, sizeof(state->input_buffer), cell->data.formula.expression);
+                break;
+            case CELL_NUMBER:
+                sprintf_s(state->input_buffer, sizeof(state->input_buffer), "%g", cell->data.number);
+                break;
+            case CELL_STRING:
+                strcpy_s(state->input_buffer, sizeof(state->input_buffer), cell->data.string);
+                break;
+            default:
+                break;
+        }
+    }
+    
+    // Set cursor position to end of buffer
+    state->input_pos = (int)strlen(state->input_buffer);
+}
+
 void app_finish_input(AppState* state) {
     // Save undo state before making changes
     const char* action_desc;
@@ -636,6 +574,9 @@ void app_finish_input(AppState* state) {
             break;
         case MODE_INSERT_STRING:
             action_desc = "Enter text";
+            break;
+        case MODE_EDIT:
+            action_desc = "Edit cell";
             break;
         case MODE_COMMAND:
             action_desc = "Execute command";
@@ -650,6 +591,7 @@ void app_finish_input(AppState* state) {
     }
     
     switch (state->mode) {
+        case MODE_EDIT:
         case MODE_INSERT_NUMBER:
         case MODE_INSERT_FORMULA:
             if (state->input_buffer[0] == '=') {
@@ -1356,6 +1298,9 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                     break;
                 case ':':
                     app_start_input(state, MODE_COMMAND);
+                    break;
+                case 'e':
+                    app_start_edit(state);
                     break;                case 'x':
                     undo_save_cell_state(state, state->cursor_row, state->cursor_col, "Clear cell");
                     sheet_clear_cell(state->sheet, state->cursor_row, state->cursor_col);

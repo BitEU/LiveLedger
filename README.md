@@ -124,8 +124,9 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **`Page Up/Down`** - Jump 10 rows
 
 ### Data Entry
-- **`=`** - Enter number or formula mode
-- **`"`** - Enter text/string mode
+- **`=`** - Enter number or formula mode (starts fresh)
+- **`"`** - Enter text/string mode (starts fresh)
+- **`e`** - Edit current cell contents (pre-filled with existing value)
 - **`:`** - Enter command mode
 - **`Enter`** - Confirm input
 - **`Escape`** - Cancel input

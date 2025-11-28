@@ -1,4 +1,4 @@
-// main.c - Enhanced WinSpread with range selection, formatting, and VLOOKUP
+// main.c - Enhanced LiveLedger with range selection, formatting, and VLOOKUP
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -222,7 +222,7 @@ void app_init(AppState* state) {
     console_hide_cursor(state->console);
     
     // Add enhanced sample data with formatting examples
-    sheet_set_string(state->sheet, 0, 0, "Enhanced WinSpread Features");
+    sheet_set_string(state->sheet, 0, 0, "Enhanced LiveLedger Features");
     
     sheet_set_string(state->sheet, 2, 0, "NEW FEATURES:");
     sheet_set_string(state->sheet, 3, 0, "Range Selection: Shift+arrows");
@@ -2107,7 +2107,7 @@ void app_show_chart(AppState* state, ChartType type, const char* x_label, const 
 // Main program
 int main() {
     debug_init();
-    debug_log("=== Starting Enhanced WinSpread ===");
+    debug_log("=== Starting Enhanced LiveLedger ===");
     
     AppState state;
     
@@ -2136,7 +2136,7 @@ int main() {
     }
     
     app_cleanup(&state);
-    debug_log("=== Enhanced WinSpread Ended ===");
+    debug_log("=== Enhanced LiveLedger Ended ===");
     debug_cleanup();
     return 0;
 }

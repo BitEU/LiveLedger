@@ -1,8 +1,8 @@
-// Resource file for WinSpread
+// Resource file for LiveLedger
 #include <windows.h>
 
 // Icon resource
-IDI_ICON1 ICON "winspread.ico"
+IDI_ICON1 ICON "liveledger.ico"
 
 // Version information (optional)
 VS_VERSION_INFO VERSIONINFO
@@ -19,12 +19,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "BitEU"
-            VALUE "FileDescription", "Windows Terminal Spreadsheet Calculator"
+            VALUE "FileDescription", "LiveLedger - A Windows Terminal Spreadsheet Calculator"
             VALUE "FileVersion", "0.8.3"
-            VALUE "InternalName", "wtsc"
+            VALUE "InternalName", "LL"
             VALUE "LegalCopyright", "Copyright (c) 2025"
-            VALUE "OriginalFilename", "wtsc.exe"
-            VALUE "ProductName", "WinSpread"
+            VALUE "OriginalFilename", "LL.exe"
+            VALUE "ProductName", "LiveLedger"
             VALUE "ProductVersion", "0.8.3"
         END
     END

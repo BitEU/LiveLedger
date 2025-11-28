@@ -509,9 +509,9 @@ int main() {
 */
 
 // To compile with MSVC:
-// cl console.c /Fe:wtsc_demo.exe user32.lib
+// cl console.c /Fe:LL_demo.exe user32.lib
 
 // To compile with MinGW:
-// gcc console.c -o wtsc_demo.exe
+// gcc console.c -o LL_demo.exe
 
 #endif // CONSOLE_H

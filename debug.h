@@ -20,13 +20,13 @@ FILE* debug_file = NULL;
 void debug_init() {
     fopen_s(&debug_file, "debug.log", "w");
     if (debug_file) {
-        debug_log("=== WinSpread Debug Log Started ===");
+        debug_log("=== LiveLedger Debug Log Started ===");
     }
 }
 
 void debug_cleanup() {
     if (debug_file) {
-        debug_log("=== WinSpread Debug Log Ended ===");
+        debug_log("=== LiveLedger Debug Log Ended ===");
         fclose(debug_file);
         debug_file = NULL;
     }

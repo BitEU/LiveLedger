@@ -1,4 +1,4 @@
-// charts.h - ASCII chart generation for WinSpread terminal spreadsheet
+// charts.h - ASCII chart generation for LiveLedger terminal spreadsheet
 #ifndef CHARTS_H
 #define CHARTS_H
 

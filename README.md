@@ -1,6 +1,6 @@
-# WinSpread - A Windows Terminal Spreadsheet Calculator
+# LiveLedger - A Windows Terminal Spreadsheet Calculator
 
-A powerful, vi-style spreadsheet application that runs entirely in the Windows terminal/console. WinSpread combines the functionality of a traditional spreadsheet with the efficiency of keyboard-driven navigation, making it perfect for quick calculations, data analysis, and spreadsheet work without leaving the command line.
+A powerful, vi-style spreadsheet application that runs entirely in the Windows terminal/console. LiveLedger combines the functionality of a traditional spreadsheet with the efficiency of keyboard-driven navigation, making it perfect for quick calculations, data analysis, and spreadsheet work without leaving the command line.
 
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue.svg)
@@ -99,8 +99,8 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 
 1. **Clone the repository:**
    ```cmd
-   git clone https://github.com/BitEU/WinSpread.git
-   cd WinSpread
+   git clone https://github.com/BitEU/LiveLedger.git
+   cd LiveLedger
    ```
 
 2. **Build using the provided script:**
@@ -110,7 +110,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 
 3. **Run the application:**
    ```cmd
-   wtsc.exe
+   LL.exe
    ```
 
 ## Usage
@@ -186,7 +186,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 
 ## CSV File Operations
 
-WinSpread provides comprehensive CSV (Comma-Separated Values) file support, allowing you to import data from external sources and export your spreadsheet calculations for use in other applications.
+LiveLedger provides comprehensive CSV (Comma-Separated Values) file support, allowing you to import data from external sources and export your spreadsheet calculations for use in other applications.
 
 ### Saving to CSV
 
@@ -211,7 +211,7 @@ When saving to CSV, you'll be prompted to choose between two formats:
 
 **Preserve Mode (`p`)**: Save formulas as text
 - Formulas are saved as text strings with their original expressions
-- Best for backing up your work or sharing with other WinSpread users
+- Best for backing up your work or sharing with other LiveLedger users
 - Maintains the logic and structure of your spreadsheet
 - Example: A cell containing `=SUM(A1:A5)` saves as `"=SUM(A1:A5)"`
 
@@ -235,7 +235,7 @@ To load data from a CSV file into your current spreadsheet, use the `loadcsv` co
 
 ### CSV Format Compatibility
 
-WinSpread's CSV implementation follows standard CSV formatting rules:
+LiveLedger's CSV implementation follows standard CSV formatting rules:
 
 **Supported Features:**
 - Comma-separated values
@@ -263,7 +263,7 @@ This CSV would load as:
 
 ## Functions
 
-WinSpread supports a comprehensive set of built-in functions for mathematical calculations, statistical analysis, and conditional logic. All functions are case-sensitive and must be entered in UPPERCASE.
+LiveLedger supports a comprehensive set of built-in functions for mathematical calculations, statistical analysis, and conditional logic. All functions are case-sensitive and must be entered in UPPERCASE.
 
 ### 1. SUM Function
 **Syntax:** `=SUM(range)` or `=SUM(value1, value2, ...)`
@@ -423,7 +423,7 @@ WinSpread supports a comprehensive set of built-in functions for mathematical ca
 
 ## Data Formatting
 
-WinSpread now supports professional data formatting options to enhance the appearance and readability of your spreadsheets. Formatting is applied to individual cells and preserved during copy/paste operations.
+LiveLedger now supports professional data formatting options to enhance the appearance and readability of your spreadsheets. Formatting is applied to individual cells and preserved during copy/paste operations.
 
 ### Supported Format Types
 
@@ -486,7 +486,7 @@ WinSpread now supports professional data formatting options to enhance the appea
 
 #### 5. Cell Color Formatting
 
-**Description** WinSpread now supports customizable text and background colors for individual cells or ranges of cells.
+**Description** LiveLedger now supports customizable text and background colors for individual cells or ranges of cells.
 
 **Command Syntax:**
 - **Text Color**: `:clrtx <color>` - Sets the text (foreground) color
@@ -564,7 +564,7 @@ Ctrl+Shift+5 - Apply percentage formatting (Excel-style)
 ## File Structure
 
 ```
-WinSpread/
+LiveLedger/
 ├── main.c          # Main application logic and UI
 ├── sheet.h         # Spreadsheet engine and formula parser
 ├── console.h       # Windows console wrapper and input handling
@@ -599,7 +599,7 @@ WinSpread/
 
 ## Error Handling
 
-WinSpread provides comprehensive error handling with clear error messages:
+LiveLedger provides comprehensive error handling with clear error messages:
 
 - **`#DIV/0!`** - Division by zero
 - **`#REF!`** - Invalid cell reference or range

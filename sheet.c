@@ -19,6 +19,19 @@ typedef struct {
     int end_row, end_col;
 } CellRange;
 
+typedef struct {
+    int min_row, max_row, min_col, max_col;
+} NormalizedRange;
+
+NormalizedRange normalize_range(const RangeSelection* sel) {
+    NormalizedRange r;
+    r.min_row = sel->start_row < sel->end_row ? sel->start_row : sel->end_row;
+    r.max_row = sel->start_row > sel->end_row ? sel->start_row : sel->end_row;
+    r.min_col = sel->start_col < sel->end_col ? sel->start_col : sel->end_col;
+    r.max_col = sel->start_col > sel->end_col ? sel->start_col : sel->end_col;
+    return r;
+}
+
 int parse_range(const char* range_str, CellRange* range);
 int get_range_values(Sheet* sheet, const CellRange* range, double* values, int max_values);
 
@@ -700,16 +713,9 @@ void sheet_clear_range_selection(Sheet* sheet) {
 int sheet_is_in_selection(Sheet* sheet, int row, int col) {
     if (!sheet->selection.is_active) return 0;
     
-    int min_row = sheet->selection.start_row < sheet->selection.end_row ? 
-                  sheet->selection.start_row : sheet->selection.end_row;
-    int max_row = sheet->selection.start_row > sheet->selection.end_row ? 
-                  sheet->selection.start_row : sheet->selection.end_row;
-    int min_col = sheet->selection.start_col < sheet->selection.end_col ? 
-                  sheet->selection.start_col : sheet->selection.end_col;
-    int max_col = sheet->selection.start_col > sheet->selection.end_col ? 
-                  sheet->selection.start_col : sheet->selection.end_col;
+    NormalizedRange r = normalize_range(&sheet->selection);
     
-    return (row >= min_row && row <= max_row && col >= min_col && col <= max_col);
+    return (row >= r.min_row && row <= r.max_row && col >= r.min_col && col <= r.max_col);
 }
 
 // Copy range to clipboard
@@ -730,17 +736,10 @@ void sheet_copy_range(Sheet* sheet) {
     }
     
     // Calculate range dimensions
-    int min_row = sheet->selection.start_row < sheet->selection.end_row ? 
-                  sheet->selection.start_row : sheet->selection.end_row;
-    int max_row = sheet->selection.start_row > sheet->selection.end_row ? 
-                  sheet->selection.start_row : sheet->selection.end_row;
-    int min_col = sheet->selection.start_col < sheet->selection.end_col ? 
-                  sheet->selection.start_col : sheet->selection.end_col;
-    int max_col = sheet->selection.start_col > sheet->selection.end_col ? 
-                  sheet->selection.start_col : sheet->selection.end_col;
+    NormalizedRange r = normalize_range(&sheet->selection);
     
-    int rows = max_row - min_row + 1;
-    int cols = max_col - min_col + 1;
+    int rows = r.max_row - r.min_row + 1;
+    int cols = r.max_col - r.min_col + 1;
     
     // Allocate clipboard
     sheet->range_clipboard.rows = rows;
@@ -762,9 +761,9 @@ void sheet_copy_range(Sheet* sheet) {
     // Copy cells
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            Cell* src_cell = sheet_get_cell(sheet, min_row + i, min_col + j);
+            Cell* src_cell = sheet_get_cell(sheet, r.min_row + i, r.min_col + j);
             if (src_cell) {
-                Cell* copied_cell = cell_new(min_row + i, min_col + j);
+                Cell* copied_cell = cell_new(r.min_row + i, r.min_col + j);
                 switch (src_cell->type) {
                     case CELL_NUMBER:
                         cell_set_number(copied_cell, src_cell->data.number);

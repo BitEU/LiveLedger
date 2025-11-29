@@ -1897,7 +1897,7 @@ void undo_perform(AppState* state) {
     UndoAction* action = &buffer->actions[buffer->current_index];
     
     switch (action->type) {
-        case UNDO_CELL_CHANGE:
+        case UNDO_CELL_CHANGE: {
             // Save current state for redo before restoring old state
             Cell* cell = sheet_get_cell(state->sheet, action->data.cell.row, action->data.cell.col);
             
@@ -1948,6 +1948,7 @@ void undo_perform(AppState* state) {
             // Restore the old state
             undo_restore_cell_data(state, &action->data.cell, action->data.cell.row, action->data.cell.col);
             break;
+        }
             
         case UNDO_RANGE_CHANGE:
             // Similar logic for range changes - restore all cells in the range

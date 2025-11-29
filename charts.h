@@ -377,7 +377,8 @@ void chart_draw_axes(Chart* chart) {
             sprintf_s(label, sizeof(label), "%7.2f", value);
         }
         
-        for (int j = 0; j < 7 && j < (int)strlen(label); j++) {
+        int label_len = (int)strlen(label);
+        for (int j = 0; j < 7 && j < label_len; j++) {
             if (j < y_axis_x) {
                 chart_set_pixel(chart, j, y, label[j]);
             }
@@ -407,18 +408,19 @@ void chart_draw_axes(Chart* chart) {
         for (int i = 0; i < series->count; i += step) {
             int x = chart_scale_x(chart, series->points[i].x);
             const char* label = series->points[i].label;
+            int label_len = (int)strlen(label);
             
-            if (strlen(label) > 0) {
+            if (label_len > 0) {
                 int label_y = chart->config.height + 1;
-                int label_x = x - (int)strlen(label) / 2;  // Center the label
+                int label_x = x - label_len / 2;  // Center the label
                 
                 // Ensure label fits within canvas
                 if (label_x < y_axis_x + 2) label_x = y_axis_x + 2;
-                if (label_x + (int)strlen(label) >= chart->canvas_width) {
-                    label_x = chart->canvas_width - (int)strlen(label) - 1;
+                if (label_x + label_len >= chart->canvas_width) {
+                    label_x = chart->canvas_width - label_len - 1;
                 }
                 
-                for (int j = 0; j < (int)strlen(label) && label_x + j < chart->canvas_width; j++) {
+                for (int j = 0; j < label_len && label_x + j < chart->canvas_width; j++) {
                     chart_set_pixel(chart, label_x + j, label_y, label[j]);
                 }
                 
@@ -444,9 +446,10 @@ void chart_draw_axes(Chart* chart) {
             }
             
             int label_y = chart->config.height + 1;
-            int label_x = x - (int)strlen(label) / 2;  // Center the label
+            int label_len = (int)strlen(label);
+            int label_x = x - label_len / 2;  // Center the label
             
-            for (int j = 0; j < (int)strlen(label); j++) {
+            for (int j = 0; j < label_len; j++) {
                 if (label_x + j >= 0 && label_x + j < chart->canvas_width) {
                     chart_set_pixel(chart, label_x + j, label_y, label[j]);
                 }
@@ -461,14 +464,16 @@ void chart_draw_axes(Chart* chart) {
     
     // Draw axis labels with better positioning
     // X axis label (centered)
-    int x_label_pos = y_axis_x + 2 + chart->config.width / 2 - (int)strlen(chart->config.x_label) / 2;
-    for (int i = 0; i < (int)strlen(chart->config.x_label); i++) {
+    int x_label_len = (int)strlen(chart->config.x_label);
+    int x_label_pos = y_axis_x + 2 + chart->config.width / 2 - x_label_len / 2;
+    for (int i = 0; i < x_label_len; i++) {
         chart_set_pixel(chart, x_label_pos + i, chart->config.height + 3, chart->config.x_label[i]);
     }
     
     // Y axis label (vertically, centered)
-    int y_label_pos = chart->config.height / 2 - (int)strlen(chart->config.y_label) / 2;
-    for (int i = 0; i < (int)strlen(chart->config.y_label); i++) {
+    int y_label_len = (int)strlen(chart->config.y_label);
+    int y_label_pos = chart->config.height / 2 - y_label_len / 2;
+    for (int i = 0; i < y_label_len; i++) {
         if (y_label_pos + i >= 0 && y_label_pos + i < chart->config.height) {
             chart_set_pixel(chart, 0, y_label_pos + i, chart->config.y_label[i]);
         }

@@ -32,6 +32,10 @@ if %ERRORLEVEL% EQU 0 (
     echo Run LL.exe to start the spreadsheet
     REM Clean up temporary resource files
     if exist resource.res del resource.res >nul 2>nul
+    if exist sheet.obj del sheet.obj >nul 2>nul
+    if exist main.obj del main.obj >nul 2>nul
+    if exist console.obj del console.obj >nul 2>nul
+    if exist charts.obj del charts.obj >nul 2>nul
 ) else (
     echo Build failed!
     exit /b 1

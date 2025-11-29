@@ -650,7 +650,6 @@ LiveLedger provides comprehensive error handling with clear error messages:
 - [ ] Support named ranges
 - [ ] Add a configuration ini file for program defaults
 - [ ] Freeze row 1 or column a while scrolling
-- [x] Auto save every 3 minutes
 - [ ] Implement a better help system in TUI format
 
 ## Contributing

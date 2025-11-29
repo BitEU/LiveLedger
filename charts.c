@@ -94,10 +94,18 @@ int chart_add_data_from_range(Chart* chart, Sheet* sheet, RangeSelection* range)
     const char symbols[] = "*+ox#@$%&";
     
     // Check if first row contains headers
+    // A row is a header only if BOTH first column AND at least one data column are strings
     int has_headers = 0;
     Cell* first_cell = sheet_get_cell(sheet, min_row, min_col);
     if (first_cell && first_cell->type == CELL_STRING) {
-        has_headers = 1;
+        // Check if any data column also has a string (indicating it's a header)
+        for (int col_idx = 1; col_idx < cols; col_idx++) {
+            Cell* data_cell = sheet_get_cell(sheet, min_row, min_col + col_idx);
+            if (data_cell && data_cell->type == CELL_STRING) {
+                has_headers = 1;
+                break;
+            }
+        }
     }
     
     // Process each Y series
@@ -321,7 +329,9 @@ void chart_draw_axes(Chart* chart) {
         }
     }
     
-    if (has_string_labels && chart->series_count > 0) {
+    // For bar charts, skip drawing labels here - let the bar chart code handle it
+    // This prevents duplicate labels
+    if (has_string_labels && chart->series_count > 0 && chart->config.type != CHART_BAR) {
         // Use actual data point labels
         ChartSeries* series = &chart->series[0];
         int max_labels = chart->config.width / 8;  // Limit labels to prevent overlap
@@ -353,7 +363,7 @@ void chart_draw_axes(Chart* chart) {
                 }
             }
         }
-    } else {
+    } else if (chart->config.type != CHART_BAR) {
         // Use numerical labels as before
         for (int i = 0; i <= num_x_labels; i++) {
             int x = y_axis_x + 2 + (chart->config.width - 2) * i / num_x_labels;
@@ -585,17 +595,18 @@ void chart_plot_bar_chart(Chart* chart) {
             }
         }
           // Draw label below bar with better handling for string labels
+        char label_buffer[64] = {0};  // Local buffer instead of static
         const char* label_text = "";
         if (strlen(series->points[i].label) > 0) {
             label_text = series->points[i].label;
         } else {
             // Use index-based label if no string label available
-            static char index_label[16];
-            sprintf_s(index_label, sizeof(index_label), "Item %d", i + 1);
-            label_text = index_label;
+            sprintf_s(label_buffer, sizeof(label_buffer), "Item %d", i + 1);
+            label_text = label_buffer;
         }
         
-        int label_y = chart->config.height + 2;
+        // Use consistent Y position for all labels
+        int label_y = chart->config.height + 1;
         int label_x = bar_x;
         
         // Handle label length intelligently

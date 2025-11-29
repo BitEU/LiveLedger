@@ -814,6 +814,7 @@ void sheet_paste_range(Sheet* sheet, int start_row, int start_col) {
                             break;
                         case CELL_FORMULA:
                             cell_set_formula(dest_cell, src_cell->data.formula.expression);
+                            sheet->needs_recalc = 1;  // Mark sheet for recalculation
                             break;
                         default:
                             cell_clear(dest_cell);
@@ -1573,10 +1574,7 @@ void sheet_recalculate(Sheet* sheet) {
 
 void sheet_recalculate_smart(Sheet* sheet) {
     // Only recalculate cells that changed and their dependents
-    // Use topological sort for correct order
-    
-    // For now, use a simple queue-based approach
-    // In a full implementation, build dependency graph and use topological sort
+    // Use iterative evaluation to handle dependencies
     
     // Build list of cells to recalculate
     Cell** to_calc = (Cell**)malloc(sheet->rows * sheet->cols * sizeof(Cell*));
@@ -1592,15 +1590,30 @@ void sheet_recalculate_smart(Sheet* sheet) {
         }
     }
     
-    // Evaluate formulas (in dependency order if graph is built)
-    for (int i = 0; i < calc_count; i++) {
-        Cell* cell = to_calc[i];
-        ErrorType error;
-        g_current_evaluating_cell = cell;
-        double value = evaluate_formula(sheet, cell->data.formula.expression, &error);
-        cell->data.formula.cached_value = value;
-        cell->data.formula.error = error;
-        g_current_evaluating_cell = NULL;
+    // Evaluate formulas multiple times to handle dependencies
+    // Keep iterating until no values change (or max iterations reached)
+    int max_iterations = 10;
+    for (int iter = 0; iter < max_iterations; iter++) {
+        int changed = 0;
+        
+        for (int i = 0; i < calc_count; i++) {
+            Cell* cell = to_calc[i];
+            double old_value = cell->data.formula.cached_value;
+            ErrorType error;
+            g_current_evaluating_cell = cell;
+            double value = evaluate_formula(sheet, cell->data.formula.expression, &error);
+            cell->data.formula.cached_value = value;
+            cell->data.formula.error = error;
+            g_current_evaluating_cell = NULL;
+            
+            // Check if value changed significantly
+            if (fabs(value - old_value) > 0.0001) {
+                changed = 1;
+            }
+        }
+        
+        // If no values changed, we're done
+        if (!changed) break;
     }
     
     free(to_calc);

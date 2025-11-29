@@ -623,7 +623,7 @@ LiveLedger provides comprehensive error handling with clear error messages:
 
 ## Future Enhancements
 
-- [ ] Graph/chart generation and visualization support like how GNUPlot does it
+- [ ] Continue bugfixing the plotting feature
 - [ ] Conditional formatting
 - [ ] Search and replace
 - [ ] Sorting and filtering

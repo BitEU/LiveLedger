@@ -1557,7 +1557,7 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                     if (state->input_pos > 0) {
                         // Remove character before cursor and shift remaining text left
                         state->input_pos--;
-                        int len = strlen(state->input_buffer);
+                        int len = (int)strlen(state->input_buffer);
                         memmove(&state->input_buffer[state->input_pos], 
                                &state->input_buffer[state->input_pos + 1], 
                                len - state->input_pos);
@@ -1566,7 +1566,7 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                 default:
                     if (isprint(key->key.ch) && strlen(state->input_buffer) < 255) {
                         // Insert character at cursor position and shift remaining text right
-                        int len = strlen(state->input_buffer);
+                        int len = (int)strlen(state->input_buffer);
                         memmove(&state->input_buffer[state->input_pos + 1], 
                                &state->input_buffer[state->input_pos], 
                                len - state->input_pos + 1);
@@ -1592,12 +1592,12 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                     state->input_pos = 0;
                     break;
                 case KEY_END:
-                    state->input_pos = strlen(state->input_buffer);
+                    state->input_pos = (int)strlen(state->input_buffer);
                     break;
                 case KEY_DELETE:
                     // Delete character at cursor position
                     if (state->input_pos < (int)strlen(state->input_buffer)) {
-                        int len = strlen(state->input_buffer);
+                        int len = (int)strlen(state->input_buffer);
                         memmove(&state->input_buffer[state->input_pos], 
                                &state->input_buffer[state->input_pos + 1], 
                                len - state->input_pos);

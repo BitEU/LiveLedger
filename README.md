@@ -628,6 +628,11 @@ LiveLedger provides comprehensive error handling with clear error messages:
 - [ ] Search and replace
 - [ ] Sorting and filtering
 - [ ] Print preview and printing
+- [ ] Support named ranges
+- [ ] Add a configuration ini file for program defaults
+- [ ] Freeze row 1 or column a while scrolling
+- [ ] Auto save every 3 minutes 
+- [ ] Implement a better help system in TUI format
 
 ## Contributing
 

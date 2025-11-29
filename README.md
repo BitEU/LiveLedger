@@ -75,7 +75,6 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **Cell ranges**: `A1:A10`, `B1:C5` for aggregate functions
 - **ASCII Charts** Generate line, bar, pie, and scatter charts directly in the terminal
 
-
 ### Advanced Features
 - **Copy/Paste**: Full cell copying with `Ctrl+C` and `Ctrl+V`
 - **Range Operations**: Select, copy, and paste entire ranges of cells
@@ -304,6 +303,167 @@ To restore from an autosave backup, use the standard load command:
 - Autosaves do not overwrite each other - each creates a new timestamped file
 - You may want to periodically clean old autosave files to save disk space
 - Autosave files are standard CSV files compatible with Excel and other spreadsheet applications
+
+## Charting Features
+
+LiveLedger includes powerful ASCII chart generation capabilities that allow you to visualize your data directly in the terminal. All charts are rendered using ASCII characters and support multiple data series with automatic scaling, legends, and labels.
+
+### Supported Chart Types
+
+#### 1. Line Charts
+Line charts display data points connected by lines, ideal for showing trends over time or continuous data relationships.
+
+**Command:** `:line [x_label] [y_label]`
+
+**Examples:**
+- `:line` - Create a basic line chart with default labels
+- `:line Time Sales` - Create a line chart with "Time" as X-axis and "Sales" as Y-axis
+- `:line Month Revenue` - Plot monthly revenue trends
+
+**Use Cases:**
+- Time series data (sales trends, stock prices, temperature changes)
+- Continuous variable relationships
+- Progress tracking over time
+
+#### 2. Bar Charts
+Bar charts display data as horizontal or vertical bars, perfect for comparing discrete categories or values.
+
+**Command:** `:bar [x_label] [y_label]`
+
+**Examples:**
+- `:bar` - Create a basic bar chart with default labels
+- `:bar Product Sales` - Compare sales across different products
+- `:bar Department Budget` - Compare budgets by department
+
+**Use Cases:**
+- Category comparisons
+- Ranking data (top performers, best sellers)
+- Budget allocations
+- Survey results
+
+#### 3. Pie Charts
+Pie charts display data as slices of a circle, showing the proportion of each category to the whole.
+
+**Command:** `:pie`
+
+**Examples:**
+- `:pie` - Create a pie chart of selected data
+
+**Use Cases:**
+- Market share distribution
+- Budget breakdowns by category
+- Percentage distributions
+- Composition analysis
+
+**Note:** Pie charts work best with 2-8 categories for clarity.
+
+#### 4. Scatter Plots
+Scatter plots display individual data points to show relationships or correlations between two variables.
+
+**Command:** `:scatter [x_label] [y_label]`
+
+**Examples:**
+- `:scatter` - Create a basic scatter plot
+- `:scatter Height Weight` - Plot height vs. weight correlation
+- `:scatter Study_Hours Test_Score` - Analyze study time impact on test scores
+
+**Use Cases:**
+- Correlation analysis
+- Outlier detection
+- Distribution patterns
+- Relationship visualization between two variables
+
+### Using Charts
+
+**Step-by-Step Process:**
+
+1. **Select Your Data Range**
+   - Use `Shift + Arrow keys` to select the data you want to chart
+   - For most chart types, use at least 2 columns: 
+     - First column: Categories, labels, or X-axis values
+     - Second column: Values or Y-axis data
+   - Additional columns will be plotted as separate data series
+
+2. **Enter Chart Command**
+   - Press `:` to enter command mode
+   - Type the chart command (e.g., `:line`, `:bar`, `:pie`, `:scatter`)
+   - Optionally add custom axis labels
+   - Press `Enter` to generate the chart
+
+3. **View the Chart**
+   - The chart appears in a popup window overlaying the spreadsheet
+   - Charts automatically scale to fit the terminal window
+   - Legends show data series names and symbols
+   - Grid lines and axes are clearly labeled
+
+4. **Close the Chart**
+   - Press any key to close the chart and return to the spreadsheet
+   - The range selection is automatically cleared
+
+### Chart Data Requirements
+
+**Minimum Requirements:**
+- At least 2 columns of data (except for single-series bar/pie charts)
+- At least 2 rows of data points
+
+**Data Structure:**
+```
+Column A    | Column B    | Column C (optional)
+------------|-------------|-------------------
+Category 1  | Value 1     | Series 2 Value 1
+Category 2  | Value 2     | Series 2 Value 2
+Category 3  | Value 3     | Series 2 Value 3
+```
+
+**Multiple Data Series:**
+- Columns beyond the first two are treated as additional data series
+- Each series is plotted with a unique symbol
+- Legends automatically display all series
+
+### Chart Features
+
+**Automatic Scaling:**
+- Charts automatically calculate appropriate X and Y axis ranges
+- Min and max values are determined from your data
+- Scaling ensures all data points are visible
+
+**Axis Labels:**
+- X-axis and Y-axis labels can be customized via command parameters
+- Default labels are "X" and "Y" if not specified
+- Labels appear on the chart borders
+
+**Legends:**
+- Automatically generated for multi-series data
+- Shows series name and plotting symbol
+- Positioned on the right side of the chart
+
+**Grid Lines:**
+- Optional grid lines for easier value reading
+- Scaled tick marks on both axes
+
+### Chart Help
+
+For quick reference while working in LiveLedger, use:
+- `:chart help` - Display chart command syntax
+- `:help chart` - Display chart command syntax
+
+### Example: Creating a Sales Chart
+
+```
+1. Enter your data:
+   A1: "Q1"    B1: 45000   C1: 42000
+   A2: "Q2"    B2: 52000   C2: 48000
+   A3: "Q3"    B3: 48000   C3: 51000
+   A4: "Q4"    B4: 61000   C4: 58000
+
+2. Select the range A1:C4 using Shift+arrows
+
+3. Enter command: :line Quarter Sales
+
+4. View your line chart showing two series (columns B and C)
+
+5. Press any key to close and return to editing
+```
 
 ## Functions
 

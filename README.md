@@ -34,7 +34,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
   - [6. MODE Function](#6-mode-function)
   - [7. IF Function](#7-if-function)
   - [8. POWER Function](#8-power-function)
-  - [9. VLOOKUP Function](#9-vlookup-function)
+  - [9. XLOOKUP Function](#9-xlookup-function)
   - [Mathematical Operators](#mathematical-operators)
   - [Range Notation](#range-notation)
 - [Data Formatting](#data-formatting)
@@ -70,7 +70,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 ### Supported Functions
 - **Mathematical**: `SUM`, `AVG`, `MAX`, `MIN`, `MEDIAN`, `MODE`, `POWER`
 - **Conditional**: `IF(condition, true_value, false_value)`
-- **Lookup**: `VLOOKUP(lookup_value, table_array, col_index, [exact_match])`
+- **Lookup**: `XLOOKUP(lookup_value, lookup_array, return_array, [match_mode])`
 - **Operators**: `+`, `-`, `*`, `/`, `>`, `<`, `>=`, `<=`, `=`, `<>`
 - **Cell ranges**: `A1:A10`, `B1:C5` for aggregate functions
 - **ASCII Charts** Generate line, bar, pie, and scatter charts directly in the terminal
@@ -366,21 +366,22 @@ LiveLedger supports a comprehensive set of built-in functions for mathematical c
 - `=POWER(A1, 0.5)` - Calculate square root of A1 (A1^0.5)
 - `=POWER(A1, 1/3)` - Calculate cube root of A1
 
-### 9. VLOOKUP Function
-**Syntax:** `=VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])`
-**Description:** Searches for a value in the first column of a table and returns a value in the same row from a specified column. Essential for data analysis and lookup operations.
+### 9. XLOOKUP Function
+**Syntax:** `=XLOOKUP(lookup_value, lookup_array, return_array, [match_mode])`
+**Description:** Searches for a value in a lookup array and returns a value in the same position from a return array. It can search any column/row and return from any column/row.
 
 **Parameters:**
 - `lookup_value` - The value to search for (can be number, string, or cell reference)
-- `table_array` - The range containing the lookup table (e.g., "A1:D10")
-- `col_index_num` - Column number in the table to return value from (1 = first column)
-- `range_lookup` - Optional: 0 for exact match, 1 for approximate match (default)
+- `lookup_array` - The range to search in (e.g., "A1:A10" or "B2:E2")
+- `return_array` - The range to return values from (must be same size as lookup_array)
+- `match_mode` - Optional: 0 for exact match (default), 1 for approximate match
 
 **Examples:**
-- `=VLOOKUP("Apple", A1:C10, 2, 0)` - Find "Apple" in column A, return value from column B
-- `=VLOOKUP(B1, D1:F100, 3, 0)` - Look up value in B1, return from 3rd column of table
-- `=VLOOKUP(1001, A1:E50, 2, 1)` - Approximate match lookup for employee ID
-- `=VLOOKUP("Product X", Products!A:D, 4, 0)` - Exact match with descriptive range name
+- `=XLOOKUP("Apple", A1:A10, B1:B10, 0)` - Find "Apple" in column A, return corresponding value from column B
+- `=XLOOKUP(B1, D1:D100, F1:F100, 0)` - Look up value in B1, return from F column
+- `=XLOOKUP(1001, A1:A50, E1:E50, 0)` - Exact match lookup for employee ID
+- `=XLOOKUP("Product X", A2:A100, D2:D100, 0)` - Search product names, return from column D
+- `=XLOOKUP(A1, B1:E1, B2:E2, 0)` - Horizontal lookup (search in row, return from another row)
 
 **Lookup Table Example:**
 ```
@@ -392,11 +393,12 @@ LiveLedger supports a comprehensive set of built-in functions for mathematical c
 5   Donut    2.50    15      Bakery
 ```
 
-**VLOOKUP Examples with this table:**
-- `=VLOOKUP("Apple", A1:D5, 2, 0)` → Returns `1.20` (price of Apple)
-- `=VLOOKUP("Banana", A1:D5, 3, 0)` → Returns `30` (stock of Banana)
-- `=VLOOKUP("Carrot", A1:D5, 4, 0)` → Returns `"Vegetable"` (category of Carrot)
-- `=VLOOKUP("Orange", A1:D5, 2, 0)` → Returns `#N/A!` (Orange not found)
+**XLOOKUP Examples with this table:**
+- `=XLOOKUP("Apple", A1:A5, B1:B5, 0)` → Returns `1.20` (price of Apple)
+- `=XLOOKUP("Banana", A1:A5, C1:C5, 0)` → Returns `30` (stock of Banana)
+- `=XLOOKUP("Carrot", A1:A5, D1:D5, 0)` → Returns `"Vegetable"` (category of Carrot)
+- `=XLOOKUP("Orange", A1:A5, B1:B5, 0)` → Returns `#N/A!` (Orange not found)
+- `=XLOOKUP("Donut", A2:A5, B2:B5, 0)` → Returns `2.50` (price of Donut, searching A2:A5)
 
 **Error Handling:**
 - **`#N/A!`** - Lookup value not found in first column
@@ -623,7 +625,6 @@ LiveLedger provides comprehensive error handling with clear error messages:
 
 - [ ] Graph/chart generation and visualization support like how GNUPlot does it
 - [ ] Conditional formatting
-- [ ] Replace VLOOKUP with XLOOKUP
 - [ ] Search and replace
 - [ ] Sorting and filtering
 - [ ] Print preview and printing

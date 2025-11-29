@@ -1274,27 +1274,46 @@ char* format_number_as_enhanced_datetime(double value, FormatStyle style) {
     return buffer;
 }
 
-// VLOOKUP function
-double func_vlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
-                   const char* table_range, int col_index, int exact_match, ErrorType* error) {
+// XLOOKUP function - more flexible than VLOOKUP
+// Searches in lookup_array and returns corresponding value from return_array
+double func_xlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
+                   const char* lookup_array, const char* return_array, int exact_match, ErrorType* error) {
     *error = ERROR_NONE;
     
-    // Parse the table range
-    CellRange range;
-    if (!parse_range(table_range, &range)) {
+    // Parse the lookup array range
+    CellRange lookup_range;
+    if (!parse_range(lookup_array, &lookup_range)) {
         *error = ERROR_REF;
         return 0.0;
     }
     
-    // Validate column index
-    if (col_index < 1 || col_index > (range.end_col - range.start_col + 1)) {
+    // Parse the return array range
+    CellRange return_range;
+    if (!parse_range(return_array, &return_range)) {
         *error = ERROR_REF;
         return 0.0;
     }
     
-    // Search through the first column of the range
-    for (int row = range.start_row; row <= range.end_row; row++) {
-        Cell* lookup_cell = sheet_get_cell(sheet, row, range.start_col);
+    // Validate ranges have same dimensions
+    int lookup_rows = lookup_range.end_row - lookup_range.start_row + 1;
+    int lookup_cols = lookup_range.end_col - lookup_range.start_col + 1;
+    int return_rows = return_range.end_row - return_range.start_row + 1;
+    int return_cols = return_range.end_col - return_range.start_col + 1;
+    
+    if (lookup_rows != return_rows || lookup_cols != return_cols) {
+        *error = ERROR_REF;
+        return 0.0;
+    }
+    
+    // Search through the lookup array
+    // Support both vertical (column) and horizontal (row) searches
+    int is_vertical = (lookup_rows > 1);
+    int search_count = is_vertical ? lookup_rows : lookup_cols;
+    
+    for (int i = 0; i < search_count; i++) {
+        int lookup_row = is_vertical ? (lookup_range.start_row + i) : lookup_range.start_row;
+        int lookup_col = is_vertical ? lookup_range.start_col : (lookup_range.start_col + i);
+        Cell* lookup_cell = sheet_get_cell(sheet, lookup_row, lookup_col);
         if (!lookup_cell) continue;
         
         int match_found = 0;
@@ -1330,8 +1349,10 @@ double func_vlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
                 // This is a simplified implementation
                 if (match_found) {
                     // Check if there's a better match later
-                    for (int next_row = row + 1; next_row <= range.end_row; next_row++) {
-                        Cell* next_cell = sheet_get_cell(sheet, next_row, range.start_col);
+                    for (int next_i = i + 1; next_i < search_count; next_i++) {
+                        int next_lookup_row = is_vertical ? (lookup_range.start_row + next_i) : lookup_range.start_row;
+                        int next_lookup_col = is_vertical ? lookup_range.start_col : (lookup_range.start_col + next_i);
+                        Cell* next_cell = sheet_get_cell(sheet, next_lookup_row, next_lookup_col);
                         if (next_cell) {
                             double next_value = 0.0;
                             if (next_cell->type == CELL_NUMBER) {
@@ -1355,9 +1376,10 @@ double func_vlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
         }
         
         if (match_found) {
-            // Found a match, return the value from the specified column
-            int result_col = range.start_col + col_index - 1;
-            Cell* result_cell = sheet_get_cell(sheet, row, result_col);
+            // Found a match, return the corresponding value from the return array
+            int return_row = is_vertical ? (return_range.start_row + i) : return_range.start_row;
+            int return_col = is_vertical ? return_range.start_col : (return_range.start_col + i);
+            Cell* result_cell = sheet_get_cell(sheet, return_row, return_col);
             
             if (!result_cell) {
                 return 0.0; // Empty cell
@@ -1998,7 +2020,7 @@ void demo_spreadsheet() {
       sheet_free(sheet);
 }
 
-// Enhanced parse_function to support VLOOKUP and other functions
+// Enhanced parse_function to support XLOOKUP and other functions
 double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
     skip_whitespace(expr);
     
@@ -2020,9 +2042,9 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
     }
     (*expr)++; // Skip '('
     
-    // Handle VLOOKUP function
-    if (strcmp(func_name, "VLOOKUP") == 0) {
-        // VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])
+    // Handle XLOOKUP function
+    if (strcmp(func_name, "XLOOKUP") == 0) {
+        // XLOOKUP(lookup_value, lookup_array, return_array, [match_mode])
         skip_whitespace(expr);
         
         // Parse lookup value (can be number or string)
@@ -2059,17 +2081,16 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
         }
         (*expr)++;
         
-        // Parse table range
+        // Parse lookup_array range
         skip_whitespace(expr);
-        const char* range_start = *expr;
-        char table_range[64];
-        int range_len = 0;
+        char lookup_array[64];
+        int lookup_len = 0;
         
-        while (**expr && **expr != ',' && range_len < 63) {
-            table_range[range_len++] = **expr;
+        while (**expr && **expr != ',' && lookup_len < 63) {
+            lookup_array[lookup_len++] = **expr;
             (*expr)++;
         }
-        table_range[range_len] = '\0';
+        lookup_array[lookup_len] = '\0';
         
         // Expect comma
         skip_whitespace(expr);
@@ -2079,21 +2100,26 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
         }
         (*expr)++;
         
-        // Parse column index
+        // Parse return_array range
         skip_whitespace(expr);
-        double col_index_f = parse_arithmetic_expression(sheet, expr, error);
-        if (*error != ERROR_NONE) return 0.0;
-        int col_index = (int)col_index_f;
+        char return_array[64];
+        int return_len = 0;
         
-        // Parse optional range_lookup parameter (default is approximate match)
-        int exact_match = 0; // Default to approximate match
+        while (**expr && **expr != ',' && **expr != ')' && return_len < 63) {
+            return_array[return_len++] = **expr;
+            (*expr)++;
+        }
+        return_array[return_len] = '\0';
+        
+        // Parse optional match_mode parameter (default is exact match)
+        int exact_match = 1; // Default to exact match (unlike VLOOKUP)
         skip_whitespace(expr);
         if (**expr == ',') {
             (*expr)++;
             skip_whitespace(expr);
-            double exact_f = parse_arithmetic_expression(sheet, expr, error);
+            double mode_f = parse_arithmetic_expression(sheet, expr, error);
             if (*error != ERROR_NONE) return 0.0;
-            exact_match = (exact_f == 0.0) ? 0 : 1; // 0 = approximate, anything else = exact
+            exact_match = (mode_f == 0.0) ? 1 : 0; // 0 = exact (default), 1 = approximate
         }
         
         // Expect closing parenthesis
@@ -2104,9 +2130,9 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
         }
         (*expr)++;
         
-        // Call VLOOKUP function
-        return func_vlookup(sheet, lookup_value, is_string_lookup ? lookup_str : NULL,
-                           table_range, col_index, exact_match, error);
+        // Call XLOOKUP function
+        return func_xlookup(sheet, lookup_value, is_string_lookup ? lookup_str : NULL,
+                           lookup_array, return_array, exact_match, error);
     }
     
     // Handle other existing functions (simplified for basic functionality)

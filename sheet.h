@@ -177,7 +177,7 @@ double evaluate_formula(Sheet* sheet, const char* formula, ErrorType* error);
 double evaluate_expression(Sheet* sheet, const char* expr, ErrorType* error);
 double evaluate_comparison(Sheet* sheet, const char* expr, ErrorType* error);
 int parse_cell_reference(const char* ref, int* row, int* col);
-char* cell_reference_to_string(int row, int col);
+void cell_reference_to_string(int row, int col, char* buffer, size_t size);
 
 // Skip whitespace in expression
 void skip_whitespace(const char** expr);

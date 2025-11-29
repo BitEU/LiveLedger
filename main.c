@@ -263,8 +263,10 @@ void app_extend_range_selection(AppState* state, int row, int col) {
     if (state->range_selection_active) {
         sheet_extend_range_selection(state->sheet, row, col);
         
-        char* start_ref = cell_reference_to_string(state->range_start_row, state->range_start_col);
-        char* end_ref = cell_reference_to_string(row, col);
+        char start_ref[16];
+        char end_ref[16];
+        cell_reference_to_string(state->range_start_row, state->range_start_col, start_ref, sizeof(start_ref));
+        cell_reference_to_string(row, col, end_ref, sizeof(end_ref));
         sprintf_s(state->status_message, sizeof(state->status_message), 
                  "Selected: %s:%s", start_ref, end_ref);
     }
@@ -449,13 +451,9 @@ void app_render(AppState* state) {
     
     // Draw status line
     char status[256];
-    char* cellRef = cell_reference_to_string(state->cursor_row, state->cursor_col);
+    char cellRef[16];
+    cell_reference_to_string(state->cursor_row, state->cursor_col, cellRef, sizeof(cellRef));
     Cell* currentCell = sheet_get_cell(state->sheet, state->cursor_row, state->cursor_col);
-    
-    if (!cellRef) {
-        static char defaultRef[] = "A1";
-        cellRef = defaultRef;
-    }
     
     if (state->mode == MODE_NORMAL) {
         if (currentCell && currentCell->type == CELL_FORMULA) {

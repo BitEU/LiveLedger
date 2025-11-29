@@ -299,12 +299,9 @@ char* sheet_get_display_value(Sheet* sheet, int row, int col) {
 }
 
 // Convert column number to letter(s) (0 -> A, 25 -> Z, 26 -> AA, etc.)
-// Uses rotating static buffers to avoid issues with multiple calls in same expression
-char* cell_reference_to_string(int row, int col) {
-    static char buffers[4][16];
-    static int current = 0;
-    char* buffer = buffers[current];
-    current = (current + 1) % 4;
+// Caller provides buffer to avoid memory management issues
+void cell_reference_to_string(int row, int col, char* buffer, size_t size) {
+    if (!buffer || size == 0) return;
     
     char colStr[8];
     int idx = 0;
@@ -325,8 +322,7 @@ char* cell_reference_to_string(int row, int col) {
     }
     colStr[idx] = '\0';
     
-    snprintf(buffer, sizeof(buffers[0]), "%s%d", colStr, row + 1);
-    return buffer;
+    snprintf(buffer, size, "%s%d", colStr, row + 1);
 }
 
 // Parse cell reference like "A1" or "AB23"

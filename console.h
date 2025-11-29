@@ -7,9 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Include debug logging
-extern void debug_log(const char* format, ...);
-extern FILE* debug_file;
 
 // Console color attributes
 #define COLOR_BLACK         0

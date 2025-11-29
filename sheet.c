@@ -1,9 +1,10 @@
 // sheet.c - Spreadsheet implementation
 #include "sheet.h"
 #include "console.h"
+#include "constants.h"
 
 // Global variables for IF function string results
-char g_if_result_string[256] = {0};
+char g_if_result_string[MAX_CELL_DISPLAY_LENGTH] = {0};
 int g_if_result_is_string = 0;
 static Cell* g_current_evaluating_cell = NULL;
 
@@ -941,8 +942,8 @@ char* format_number_as_date(double value, FormatStyle style) {
     
     // Convert Excel serial date to time_t (days since 1900-01-01)
     // Excel incorrectly treats 1900 as a leap year, so we need adjustment
-    time_t base_time = (time_t)-2209161600LL;  // 1900-01-01 00:00:00 UTC (adjusted)
-    time_t date_time = base_time + (time_t)(value * 86400); // 86400 seconds per day
+    time_t base_time = (time_t)EXCEL_BASE_TIME;  // 1900-01-01 00:00:00 UTC (adjusted)
+    time_t date_time = base_time + (time_t)(value * SECONDS_PER_DAY); // seconds per day
     
     struct tm date_struct;
     if (gmtime_s(&date_struct, &date_time) != 0) {
@@ -987,10 +988,10 @@ char* format_number_as_time(double value, FormatStyle style) {
     double time_fraction = value - floor(value);
     if (time_fraction < 0) time_fraction += 1.0;
     
-    int total_seconds = (int)(time_fraction * 86400);
-    int hours = total_seconds / 3600;
-    int minutes = (total_seconds % 3600) / 60;
-    int seconds = total_seconds % 60;
+    int total_seconds = (int)(time_fraction * SECONDS_PER_DAY);
+    int hours = total_seconds / SECONDS_PER_HOUR;
+    int minutes = (total_seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE;
+    int seconds = total_seconds % SECONDS_PER_MINUTE;
     
     switch (style) {
         case TIME_STYLE_12HR:
@@ -998,7 +999,7 @@ char* format_number_as_time(double value, FormatStyle style) {
                 int display_hours = hours;
                 const char* am_pm = "AM";
                 if (hours == 0) {
-                    display_hours = 12;
+                    display_hours = HOURS_12;
                 } else if (hours == 12) {
                     am_pm = "PM";
                 } else if (hours > 12) {
@@ -1060,10 +1061,10 @@ char* format_number_as_enhanced_datetime(double value, FormatStyle style) {
     // Extract time portion for time components
     double time_fraction = value - floor(value);
     if (time_fraction < 0) time_fraction += 1.0;
-    int total_seconds = (int)(time_fraction * 86400);
-    int hours = total_seconds / 3600;
-    int minutes = (total_seconds % 3600) / 60;
-    int seconds = total_seconds % 60;
+    int total_seconds = (int)(time_fraction * SECONDS_PER_DAY);
+    int hours = total_seconds / SECONDS_PER_HOUR;
+    int minutes = (total_seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE;
+    int seconds = total_seconds % SECONDS_PER_MINUTE;
     
     switch (style) {
         case DATETIME_STYLE_SHORT:
@@ -1115,7 +1116,7 @@ char* format_number_as_enhanced_datetime(double value, FormatStyle style) {
     return buffer;
 }
 
-// XLOOKUP function - more flexible than VLOOKUP
+// XLOOKUP function
 // Searches in lookup_array and returns corresponding value from return_array
 double func_xlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
                    const char* lookup_array, const char* return_array, int exact_match, ErrorType* error) {
@@ -1489,8 +1490,8 @@ double parse_factor(Sheet* sheet, const char** expr, ErrorType* error) {
             CellRange range;
             if (parse_range(ref_buf, &range)) {
                 // For a range without a function, just return the sum
-                double values[1000];
-                int count = get_range_values(sheet, &range, values, 1000);
+                double values[MAX_RANGE_VALUES];
+                int count = get_range_values(sheet, &range, values, MAX_RANGE_VALUES);
                 return func_sum(values, count);
             } else {
                 *error = ERROR_PARSE;
@@ -2012,7 +2013,7 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
         return_array[return_len] = '\0';
         
         // Parse optional match_mode parameter (default is exact match)
-        int exact_match = 1; // Default to exact match (unlike VLOOKUP)
+        int exact_match = 1; // Default to exact match
         skip_whitespace(expr);
         if (**expr == ',') {
             (*expr)++;

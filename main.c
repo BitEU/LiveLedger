@@ -1,4 +1,4 @@
-// main.c - Enhanced LiveLedger with range selection, formatting, and VLOOKUP
+// main.c - Enhanced LiveLedger with range selection, formatting, and XLOOKUP
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,8 +7,8 @@
 
 #include "console.h"
 #include "sheet.h"
-#include "debug.h"
 #include "charts.h"
+#include "constants.h"
 
 // Application state
 typedef enum {
@@ -88,7 +88,7 @@ typedef struct UndoAction {
         RangeUndoData range;
         ResizeUndoData resize;
     } data;
-    char description[128];
+    char description[DESCRIPTION_BUFFER_SIZE];
 } UndoAction;
 
 #define MAX_UNDO_ACTIONS 100
@@ -107,9 +107,9 @@ typedef struct {
     int cursor_col;
     int view_top;
     int view_left;
-    char input_buffer[256];
+    char input_buffer[INPUT_BUFFER_SIZE];
     int input_pos;
-    char status_message[256];
+    char status_message[STATUS_BUFFER_SIZE];
     BOOL running;
     
     // Cursor blinking state
@@ -124,6 +124,10 @@ typedef struct {
     
     // Undo/Redo system
     UndoBuffer undo_buffer;
+    
+    // Autosave system
+    DWORD last_autosave_time;
+    DWORD autosave_interval;  // 3 minutes in milliseconds
 } AppState;
 
 // Function prototypes
@@ -179,19 +183,15 @@ void undo_free_cell_data(CellUndoData* data);
 BOOL set_system_clipboard_text(const char* text);
 char* get_system_clipboard_text(void);
 
+// Autosave functions
+void app_create_autosave_directory(void);
+void app_perform_autosave(AppState* state);
+void app_get_timestamp_filename(char* filename, size_t size);
+
 // Initialize application
 void app_init(AppState* state) {
-    debug_log("Starting app_init");
-    
     state->sheet = sheet_new(1000, 100);
-    if (!state->sheet) {
-        debug_log("ERROR: Failed to create sheet");
-    }
-    
     state->console = console_init();
-    if (!state->console) {
-        debug_log("ERROR: Failed to initialize console");
-    }
     
     if (!state->sheet || !state->console) {
         if (state->sheet) sheet_free(state->sheet);
@@ -219,12 +219,16 @@ void app_init(AppState* state) {
     
     state->cursor_blink_time = GetTickCount();
     state->cursor_visible = TRUE;
-    state->cursor_blink_rate = 500;
+    state->cursor_blink_rate = CURSOR_BLINK_RATE_MS;
+    
+    // Initialize autosave system
+    state->last_autosave_time = GetTickCount();
+    state->autosave_interval = AUTOSAVE_INTERVAL_MS;
+    app_create_autosave_directory();
     
     console_hide_cursor(state->console);
     
     sheet_recalculate(state->sheet);
-    debug_log("app_init completed successfully");
 }
 
 void app_cleanup(AppState* state) {
@@ -263,8 +267,8 @@ void app_extend_range_selection(AppState* state, int row, int col) {
     if (state->range_selection_active) {
         sheet_extend_range_selection(state->sheet, row, col);
         
-        char start_ref[16];
-        char end_ref[16];
+        char start_ref[CELL_REF_BUFFER_SIZE];
+        char end_ref[CELL_REF_BUFFER_SIZE];
         cell_reference_to_string(state->range_start_row, state->range_start_col, start_ref, sizeof(start_ref));
         cell_reference_to_string(row, col, end_ref, sizeof(end_ref));
         sprintf_s(state->status_message, sizeof(state->status_message), 
@@ -330,7 +334,7 @@ void app_render(AppState* state) {
     // Draw column headers (with dynamic widths)
     int current_x = col_header_width;
     for (int i = 0; i < visible_cols && state->view_left + i < state->sheet->cols; i++) {
-        char colName[10];
+        char colName[COLUMN_NAME_BUFFER_SIZE];
         int col = state->view_left + i;
         int col_width = sheet_get_column_width(state->sheet, col);
         
@@ -351,7 +355,7 @@ void app_render(AppState* state) {
         int row_height = sheet_get_row_height(state->sheet, sheet_row);
         
         // Draw row number only on the first line of each row
-        char rowNum[10];
+        char rowNum[ROW_NUMBER_BUFFER_SIZE];
         sprintf_s(rowNum, sizeof(rowNum), "%3d", sheet_row + 1);
         console_write_string(con, 0, visual_row + 1, rowNum, headerColor);
         
@@ -450,8 +454,8 @@ void app_render(AppState* state) {
     }
     
     // Draw status line
-    char status[256];
-    char cellRef[16];
+    char status[STATUS_BUFFER_SIZE];
+    char cellRef[CELL_REF_BUFFER_SIZE];
     cell_reference_to_string(state->cursor_row, state->cursor_col, cellRef, sizeof(cellRef));
     Cell* currentCell = sheet_get_cell(state->sheet, state->cursor_row, state->cursor_col);
     
@@ -620,14 +624,14 @@ void app_finish_input(AppState* state) {
     }
     
     state->mode = MODE_NORMAL;
-    state->cursor_blink_rate = 500;
+    state->cursor_blink_rate = CURSOR_BLINK_RATE_MS;
     state->cursor_visible = TRUE;
     state->cursor_blink_time = GetTickCount();
 }
 
 void app_cancel_input(AppState* state) {
     state->mode = MODE_NORMAL;
-    state->cursor_blink_rate = 500;
+    state->cursor_blink_rate = CURSOR_BLINK_RATE_MS;
     state->cursor_visible = TRUE;
     state->cursor_blink_time = GetTickCount();
     strcpy_s(state->status_message, sizeof(state->status_message), "Cancelled");
@@ -812,13 +816,13 @@ int ask_preserve_formulas(AppState* state, const char* operation) {
                 }
             }
         }
-        Sleep(10);
+        Sleep(DEFAULT_SLEEP_MS);
     }
     
     state->mode = old_mode;
     state->input_buffer[0] = '\0';
     state->input_pos = 0;
-    state->cursor_blink_rate = 500;
+    state->cursor_blink_rate = CURSOR_BLINK_RATE_MS;
     state->cursor_visible = TRUE;
     state->cursor_blink_time = GetTickCount();
     
@@ -1221,6 +1225,38 @@ char* get_system_clipboard_text(void) {
     return result;
 }
 
+// Autosave functions
+void app_create_autosave_directory(void) {
+    // Create AS directory if it doesn't exist
+    CreateDirectoryA("AS", NULL);
+    // Ignore errors - directory may already exist
+}
+
+void app_get_timestamp_filename(char* filename, size_t size) {
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+    
+    // Format: YYYY-MM-DD HH-MM-SS.csv
+    sprintf_s(filename, size, "AS\\%04d-%02d-%02d %02d-%02d-%02d.csv",
+              st.wYear, st.wMonth, st.wDay,
+              st.wHour, st.wMinute, st.wSecond);
+}
+
+void app_perform_autosave(AppState* state) {
+    char filename[MAX_PATH];
+    app_get_timestamp_filename(filename, sizeof(filename));
+    
+    // Save with formulas preserved (preserve mode = 1)
+    if (sheet_save_csv(state->sheet, filename, 1)) {
+        // Update status message briefly (will be overwritten on next render)
+        sprintf_s(state->status_message, sizeof(state->status_message), 
+                  "Auto-saved to %s", filename);
+    } else {
+        sprintf_s(state->status_message, sizeof(state->status_message), 
+                  "Auto-save failed");
+    }
+}
+
 // Handle keyboard input
 void app_handle_input(AppState* state, KeyEvent* key) {
     if (state->mode == MODE_NORMAL) {
@@ -1528,7 +1564,7 @@ void app_handle_input(AppState* state, KeyEvent* key) {
         
         // Adjust view if cursor moved outside
         int visible_rows = state->console->height - 3;
-        int visible_cols = (state->console->width - 4) / 10;
+        int visible_cols = (state->console->width - 4) / VISIBLE_COLS_DIVISOR;
         
         if (state->cursor_row < state->view_top) {
             state->view_top = state->cursor_row;
@@ -2103,7 +2139,7 @@ void app_show_chart(AppState* state, ChartType type, const char* x_label, const 
     chart_render(chart);
     
     // Create title for the chart
-    char title[128];
+    char title[TITLE_BUFFER_SIZE];
     const char* type_name = "Chart";
     switch (type) {
         case CHART_LINE: type_name = "Line Chart"; break;
@@ -2122,7 +2158,7 @@ void app_show_chart(AppState* state, ChartType type, const char* x_label, const 
         if (console_get_key(state->console, &key)) {
             break;  // Any key closes the chart
         }
-        Sleep(50);
+        Sleep(CHART_POPUP_SLEEP_MS);
     }
     
     // Clean up
@@ -2137,16 +2173,12 @@ void app_show_chart(AppState* state, ChartType type, const char* x_label, const 
 
 // Main program
 int main() {
-    debug_init();
-    debug_log("=== Starting Enhanced LiveLedger ===");
-    
     AppState state;
     
     app_init(&state);
     
     if (!state.running) {
         printf("Failed to initialize application\n");
-        debug_cleanup();
         return 1;
     }
     
@@ -2154,6 +2186,13 @@ int main() {
     while (state.running) {
         app_update_cursor_blink(&state);
         app_render(&state);
+        
+        // Check if autosave is needed
+        DWORD current_time = GetTickCount();
+        if (current_time - state.last_autosave_time >= state.autosave_interval) {
+            app_perform_autosave(&state);
+            state.last_autosave_time = current_time;
+        }
         
         KeyEvent key;
         if (console_get_key(state.console, &key)) {
@@ -2163,11 +2202,9 @@ int main() {
             state.cursor_blink_time = GetTickCount();
         }
         
-        Sleep(16);  // ~60 FPS
+        Sleep(FRAME_SLEEP_MS);  // ~60 FPS
     }
     
     app_cleanup(&state);
-    debug_log("=== Enhanced LiveLedger Ended ===");
-    debug_cleanup();
     return 0;
 }

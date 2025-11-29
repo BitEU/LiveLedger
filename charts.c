@@ -1,5 +1,6 @@
 // charts.c - ASCII chart implementation
 #include "charts.h"
+#include "constants.h"
 
 Chart* chart_create(ChartType type, const char* x_label, const char* y_label) {
     // Use larger default sizes for better visibility
@@ -475,7 +476,7 @@ void chart_plot_line_chart(Chart* chart) {
         // Always place legend on the right if there's any space, otherwise below
         if (legend_x + max_legend_width >= chart->canvas_width - 2) {
             // Move legend below the chart
-            legend_x = 12;
+            legend_x = CHART_LEGEND_X;
             legend_y = chart->config.height + 3;
         }
         
@@ -525,7 +526,7 @@ void chart_plot_bar_chart(Chart* chart) {
     int total_width = chart->config.width - 4;
     int bar_width = total_width / series->count - 2;  // Leave space between bars
     if (bar_width < 3) bar_width = 3;
-    if (bar_width > 12) bar_width = 12;
+    if (bar_width > MAX_BAR_WIDTH) bar_width = MAX_BAR_WIDTH;
     
     int spacing = 2;
     if (series->count * (bar_width + spacing) > total_width) {
@@ -535,7 +536,7 @@ void chart_plot_bar_chart(Chart* chart) {
     
     // Draw bars
     for (int i = 0; i < series->count; i++) {
-        int bar_x = 12 + i * (bar_width + spacing);
+        int bar_x = CHART_BAR_X_BASE + i * (bar_width + spacing);
         int bar_top = chart_scale_y(chart, series->points[i].y);
         int bar_bottom = chart_scale_y(chart, 0);
         

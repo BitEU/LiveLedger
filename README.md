@@ -25,6 +25,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
     - [CSV Format Options](#csv-format-options)
   - [Loading from CSV](#loading-from-csv)
   - [CSV Format Compatibility](#csv-format-compatibility)
+- [Auto-Save Feature](#auto-save-feature)
 - [Functions](#functions)
   - [1. SUM Function](#1-sum-function)
   - [2. AVG Function](#2-avg-function)
@@ -47,7 +48,6 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
     - [6. Dynamic Column and Row Resizing](#6-dynamic-column-and-row-resizing)
   - [Format Application](#format-application)
   - [Format Persistence](#format-persistence)
-- [File Structure](#file-structure)
 - [Architecture](#architecture)
   - [Core Components](#core-components)
 - [Error Handling](#error-handling)
@@ -88,6 +88,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **Error handling**: Division by zero, reference errors, parse errors, and lookup errors
 - **Cell formatting**: Width, precision, and alignment support
 - **Command mode**: Vi-style commands for advanced operations
+- **Auto-save**: Automatic backup every 3 minutes to timestamped files in the `AS` directory
 
 ## Installation
 
@@ -270,6 +271,39 @@ This CSV would load as:
 - A3: `Doe, Jane`, B3: `28`, C3: `45000`, D3: `Human Resources`
 - A4: `Bob`, B4: `42`, C4: `55000`, D4: `Sales`
 - A5: `Alice`, B5: `31`, C5: (empty), D5: `Marketing`
+
+## Auto-Save Feature
+
+LiveLedger includes an automatic backup system that saves your work periodically without interruption.
+
+**How It Works:**
+- Automatically saves every 3 minutes
+- Creates timestamped backup files in the `AS` directory
+- Saves formulas in preserve mode (formulas are saved as text strings)
+- Runs silently in the background without interrupting your work
+
+**Backup File Format:**
+- **Directory**: `AS/` (created automatically in the program directory)
+- **Filename Format**: `YYYY-MM-DD HH-MM-SS.csv`
+- **Example**: `AS/2024-12-25 14-30-45.csv`
+
+**Benefits:**
+- **Protection against crashes**: Your work is backed up regularly
+- **Version history**: Each autosave creates a new file, allowing you to recover from earlier time points
+- **No manual intervention**: Autosave happens automatically without requiring user action
+- **Preserves formulas**: Saved files maintain your formula logic for easy restoration
+
+**Restoring from Autosave:**
+To restore from an autosave backup, use the standard load command:
+```
+:loadcsv AS/2024-12-25 14-30-45.csv
+```
+
+**Notes:**
+- The first autosave occurs 3 minutes after launching LiveLedger
+- Autosaves do not overwrite each other - each creates a new timestamped file
+- You may want to periodically clean old autosave files to save disk space
+- Autosave files are standard CSV files compatible with Excel and other spreadsheet applications
 
 ## Functions
 
@@ -573,21 +607,6 @@ Ctrl+Shift+5 - Apply percentage formatting (Excel-style)
 - **Cell Clearing**: Clearing cell content (`x` key) preserves formatting
 - **Value Changes**: Changing cell values maintains existing formatting
 
-## File Structure
-
-```
-LiveLedger/
-├── main.c          # Main application logic and UI
-├── sheet.h         # Spreadsheet engine and formula parser
-├── console.h       # Windows console wrapper and input handling
-├── compat.h        # Compatibility definitions
-├── debug.h         # Manages debugging log
-├── charts.h         # Generates charts
-├── build.bat       # Build script for Windows
-├── LICENSE         # GPL v3 license
-└── README.md       # This file
-```
-
 ## Architecture
 
 ### Core Components
@@ -617,7 +636,7 @@ LiveLedger provides comprehensive error handling with clear error messages:
 - **`#REF!`** - Invalid cell reference or range
 - **`#VALUE!`** - Invalid value or type mismatch  
 - **`#PARSE!`** - Formula parsing error
-- **`#N/A!`** - Value not available (VLOOKUP not found)
+- **`#N/A!`** - Value not available (XLOOKUP not found)
 - **`#DATE!`** - Invalid date conversion
 - **Range boundary errors** - Automatic handling of out-of-bounds operations
 
@@ -631,7 +650,7 @@ LiveLedger provides comprehensive error handling with clear error messages:
 - [ ] Support named ranges
 - [ ] Add a configuration ini file for program defaults
 - [ ] Freeze row 1 or column a while scrolling
-- [ ] Auto save every 3 minutes 
+- [x] Auto save every 3 minutes
 - [ ] Implement a better help system in TUI format
 
 ## Contributing

@@ -17,6 +17,7 @@ v17/
 *.log.*
 *.exe
 *.obj
+AS/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -28,7 +28,7 @@ typedef enum {
     ERROR_NA
 } ErrorType;
 
-// NEW: Data formatting types
+// Data formatting types
 typedef enum {
     FORMAT_GENERAL,
     FORMAT_NUMBER,
@@ -39,7 +39,7 @@ typedef enum {
     FORMAT_DATETIME
 } DataFormat;
 
-// NEW: Date/Time formatting styles
+// Date/Time formatting styles
 typedef enum {
     DATE_STYLE_MM_DD_YYYY,    // 12/25/2023
     DATE_STYLE_DD_MM_YYYY,    // 25/12/2023  
@@ -74,15 +74,15 @@ typedef struct Cell {
     int width;
     int precision;
     int align;  // 0=left, 1=center, 2=right
-      // NEW: Formatting properties
+      // Formatting properties
     DataFormat format;
     FormatStyle format_style;
     
-    // NEW: Color formatting properties
+    // Color formatting properties
     int text_color;         // Foreground color (0-15 or -1 for default)
     int background_color;   // Background color (0-15 or -1 for default)
     
-    // NEW: Size properties
+    // Size properties
     int row_height;         // Custom row height (-1 for default)
     
     // Dependencies
@@ -96,14 +96,14 @@ typedef struct Cell {
     int col;
 } Cell;
 
-// NEW: Range selection structure
+// Range selection structure
 typedef struct {
     int start_row, start_col;
     int end_row, end_col;
     int is_active;
 } RangeSelection;
 
-// NEW: Range clipboard structure
+// Range clipboard structure
 typedef struct {
     Cell*** cells;  // 2D array of copied cells
     int rows, cols;
@@ -116,14 +116,14 @@ typedef struct Sheet {
     int rows;
     int cols;
     int* col_widths;
-    int* row_heights;   // NEW: Array of row heights
+    int* row_heights;   // Array of row heights
     char* name;
       // Calculation state
     int needs_recalc;
     Cell** calc_order;  // Topological sort of cells for calculation
     int calc_count;
     
-    // NEW: Range operations
+    // Range operations
     RangeSelection selection;
     RangeClipboard range_clipboard;
 } Sheet;
@@ -168,7 +168,7 @@ char* cell_reference_to_string(int row, int col);
 // Skip whitespace in expression
 void skip_whitespace(const char** expr);
 
-// NEW: Range copy/paste operations
+// Range copy/paste operations
 void sheet_start_range_selection(Sheet* sheet, int row, int col);
 void sheet_extend_range_selection(Sheet* sheet, int row, int col);
 void sheet_copy_range(Sheet* sheet);
@@ -176,7 +176,7 @@ void sheet_paste_range(Sheet* sheet, int start_row, int start_col);
 void sheet_clear_range_selection(Sheet* sheet);
 int sheet_is_in_selection(Sheet* sheet, int row, int col);
 
-// NEW: Cell formatting functions
+// Cell formatting functions
 void cell_set_format(Cell* cell, DataFormat format, FormatStyle style);
 char* format_cell_value(Cell* cell);
 char* format_number_as_percentage(double value, int precision);
@@ -186,18 +186,24 @@ char* format_number_as_time(double value, FormatStyle style);
 char* format_number_as_datetime(double value, FormatStyle date_style, FormatStyle time_style);
 char* format_number_as_enhanced_datetime(double value, FormatStyle style);
 
-// NEW: Cell color formatting functions
+// Cell color formatting functions
 void cell_set_text_color(Cell* cell, int color);
 void cell_set_background_color(Cell* cell, int color);
 int parse_color(const char* color_str);
 
-// NEW: Column/Row resizing functions
+// Column/Row resizing functions
 void sheet_set_column_width(Sheet* sheet, int col, int width);
 void sheet_set_row_height(Sheet* sheet, int row, int height);
 int sheet_get_column_width(Sheet* sheet, int col);
 int sheet_get_row_height(Sheet* sheet, int row);
 void sheet_resize_columns_in_range(Sheet* sheet, int start_col, int end_col, int delta);
 void sheet_resize_rows_in_range(Sheet* sheet, int start_row, int end_row, int delta);
+
+// Insert/Delete Row and Column functions
+void sheet_insert_row(Sheet* sheet, int row);
+void sheet_insert_column(Sheet* sheet, int col);
+void sheet_delete_row(Sheet* sheet, int row);
+void sheet_delete_column(Sheet* sheet, int col);
 
 // Implementation
 
@@ -233,13 +239,13 @@ Sheet* sheet_new(int rows, int cols) {
         sheet->col_widths[i] = 10;  // Default width
     }
     
-    // NEW: Initialize row heights
+    // Initialize row heights
     sheet->row_heights = (int*)calloc(rows, sizeof(int));
     for (int i = 0; i < rows; i++) {
         sheet->row_heights[i] = 1;  // Default height
     }
     
-    // NEW: Initialize range selection and clipboard
+    // Initialize range selection and clipboard
     sheet->selection.is_active = 0;
     sheet->range_clipboard.is_active = 0;
     sheet->range_clipboard.cells = NULL;
@@ -260,7 +266,7 @@ void sheet_free(Sheet* sheet) {
         free(sheet->cells[i]);    }
     free(sheet->cells);
     
-    // NEW: Free range clipboard
+    // Free range clipboard
     if (sheet->range_clipboard.cells) {
         for (int i = 0; i < sheet->range_clipboard.rows; i++) {
             for (int j = 0; j < sheet->range_clipboard.cols; j++) {
@@ -273,7 +279,7 @@ void sheet_free(Sheet* sheet) {
         free(sheet->range_clipboard.cells);
     }
       free(sheet->col_widths);
-    free(sheet->row_heights);  // NEW: Free row heights
+    free(sheet->row_heights);  // Free row heights
     free(sheet->name);
     free(sheet->calc_order);
     free(sheet);
@@ -307,11 +313,11 @@ Cell* cell_new(int row, int col) {
     cell->precision = 2;
     cell->align = 2;  // Right align for numbers by default
     
-    // NEW: Initialize formatting
+    // Initialize formatting
     cell->format = FORMAT_GENERAL;
     cell->format_style = 0;
     
-    // NEW: Initialize color formatting
+    // Initialize color formatting
     cell->text_color = -1;        // Default text color
     cell->background_color = -1;  // Default background color
     cell->row_height = -1;        // Default row height
@@ -420,7 +426,7 @@ void sheet_clear_cell(Sheet* sheet, int row, int col) {
 }
 
 char* cell_get_display_value(Cell* cell) {
-    // Use the new formatting function
+    // Use the formatting function
     return format_cell_value(cell);
 }
 
@@ -786,7 +792,7 @@ void sheet_set_clipboard_cell(Cell* cell) {
         clipboard_cell->precision = cell->precision;
         clipboard_cell->align = cell->align;
         
-        // NEW: Copy color formatting
+        // Copy color formatting
         clipboard_cell->text_color = cell->text_color;
         clipboard_cell->background_color = cell->background_color;
         clipboard_cell->row_height = cell->row_height;
@@ -825,7 +831,7 @@ void sheet_copy_cell(Sheet* sheet, int src_row, int src_col, int dest_row, int d
         dest_cell->precision = src_cell->precision;
         dest_cell->align = src_cell->align;
         
-        // NEW: Copy color formatting
+        // Copy color formatting
         dest_cell->text_color = src_cell->text_color;
         dest_cell->background_color = src_cell->background_color;
         dest_cell->row_height = src_cell->row_height;
@@ -834,7 +840,7 @@ void sheet_copy_cell(Sheet* sheet, int src_row, int src_col, int dest_row, int d
     sheet_recalculate(sheet);
 }
 
-// NEW: Range selection functions
+// Range selection functions
 void sheet_start_range_selection(Sheet* sheet, int row, int col) {
     sheet->selection.start_row = row;
     sheet->selection.start_col = col;
@@ -869,7 +875,7 @@ int sheet_is_in_selection(Sheet* sheet, int row, int col) {
     return (row >= min_row && row <= max_row && col >= min_col && col <= max_col);
 }
 
-// NEW: Copy range to clipboard
+// Copy range to clipboard
 void sheet_copy_range(Sheet* sheet) {
     if (!sheet->selection.is_active) return;
     
@@ -944,7 +950,7 @@ void sheet_copy_range(Sheet* sheet) {
     sheet->range_clipboard.is_active = 1;
 }
 
-// NEW: Paste range from clipboard
+// Paste range from clipboard
 void sheet_paste_range(Sheet* sheet, int start_row, int start_col) {
     if (!sheet->range_clipboard.is_active) return;
     
@@ -989,7 +995,7 @@ void sheet_paste_range(Sheet* sheet, int start_row, int start_col) {
     sheet_recalculate(sheet);
 }
 
-// NEW: Cell formatting functions
+// Cell formatting functions
 void cell_set_format(Cell* cell, DataFormat format, FormatStyle style) {
     if (!cell) return;
     
@@ -1196,7 +1202,7 @@ char* format_number_as_datetime(double value, FormatStyle date_style, FormatStyl
     return buffer;
 }
 
-// NEW: Enhanced datetime formatting for special styles
+// Enhanced datetime formatting for special styles
 char* format_number_as_enhanced_datetime(double value, FormatStyle style) {
     static char buffer[128];
     
@@ -1268,7 +1274,7 @@ char* format_number_as_enhanced_datetime(double value, FormatStyle style) {
     return buffer;
 }
 
-// NEW: VLOOKUP function
+// VLOOKUP function
 double func_vlookup(Sheet* sheet, double lookup_value, const char* lookup_str,
                    const char* table_range, int col_index, int exact_match, ErrorType* error) {
     *error = ERROR_NONE;
@@ -2014,7 +2020,7 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
     }
     (*expr)++; // Skip '('
     
-    // NEW: Handle VLOOKUP function
+    // Handle VLOOKUP function
     if (strcmp(func_name, "VLOOKUP") == 0) {
         // VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])
         skip_whitespace(expr);
@@ -2393,7 +2399,7 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
     return 0.0;
 }
 
-// NEW: Cell color formatting functions
+// Cell color formatting functions
 void cell_set_text_color(Cell* cell, int color) {
     if (cell) {
         cell->text_color = color;
@@ -2458,7 +2464,7 @@ int parse_color(const char* color_str) {
     return -1; // Unknown color
 }
 
-// NEW: Column/Row resizing functions
+// Column/Row resizing functions
 void sheet_set_column_width(Sheet* sheet, int col, int width) {
     if (!sheet || col < 0 || col >= sheet->cols || width < 1) return;
     sheet->col_widths[col] = width;
@@ -2499,6 +2505,131 @@ void sheet_resize_rows_in_range(Sheet* sheet, int start_row, int end_row, int de
         if (new_height > 10) new_height = 10; // Maximum height
         sheet->row_heights[row] = new_height;
     }
+}
+
+// Insert/Delete Row and Column functions
+void sheet_insert_row(Sheet* sheet, int row) {
+    if (!sheet || row < 0 || row >= sheet->rows) return;
+    
+    // Shift all rows down from the insertion point
+    for (int r = sheet->rows - 1; r > row; r--) {
+        for (int c = 0; c < sheet->cols; c++) {
+            if (sheet->cells[r-1][c]) {
+                // Move cell from row r-1 to row r
+                sheet->cells[r][c] = sheet->cells[r-1][c];
+                sheet->cells[r][c]->row = r;
+                sheet->cells[r-1][c] = NULL;
+            }
+        }
+        // Move row height
+        sheet->row_heights[r] = sheet->row_heights[r-1];
+    }
+    
+    // Clear the inserted row and set default height
+    for (int c = 0; c < sheet->cols; c++) {
+        sheet->cells[row][c] = NULL;
+    }
+    sheet->row_heights[row] = 1; // Default height
+    
+    // Mark sheet for recalculation
+    sheet->needs_recalc = 1;
+}
+
+void sheet_insert_column(Sheet* sheet, int col) {
+    if (!sheet || col < 0 || col >= sheet->cols) return;
+    
+    // Shift all columns right from the insertion point
+    for (int c = sheet->cols - 1; c > col; c--) {
+        for (int r = 0; r < sheet->rows; r++) {
+            if (sheet->cells[r][c-1]) {
+                // Move cell from column c-1 to column c
+                sheet->cells[r][c] = sheet->cells[r][c-1];
+                sheet->cells[r][c]->col = c;
+                sheet->cells[r][c-1] = NULL;
+            }
+        }
+        // Move column width
+        sheet->col_widths[c] = sheet->col_widths[c-1];
+    }
+    
+    // Clear the inserted column and set default width
+    for (int r = 0; r < sheet->rows; r++) {
+        sheet->cells[r][col] = NULL;
+    }
+    sheet->col_widths[col] = 10; // Default width
+    
+    // Mark sheet for recalculation
+    sheet->needs_recalc = 1;
+}
+
+void sheet_delete_row(Sheet* sheet, int row) {
+    if (!sheet || row < 0 || row >= sheet->rows) return;
+    
+    // Clear and free all cells in the row to be deleted
+    for (int c = 0; c < sheet->cols; c++) {
+        if (sheet->cells[row][c]) {
+            cell_free(sheet->cells[row][c]);
+            sheet->cells[row][c] = NULL;
+        }
+    }
+    
+    // Shift all rows up from the deletion point
+    for (int r = row; r < sheet->rows - 1; r++) {
+        for (int c = 0; c < sheet->cols; c++) {
+            if (sheet->cells[r+1][c]) {
+                // Move cell from row r+1 to row r
+                sheet->cells[r][c] = sheet->cells[r+1][c];
+                sheet->cells[r][c]->row = r;
+                sheet->cells[r+1][c] = NULL;
+            }
+        }
+        // Move row height
+        sheet->row_heights[r] = sheet->row_heights[r+1];
+    }
+    
+    // Clear the last row and set default height
+    for (int c = 0; c < sheet->cols; c++) {
+        sheet->cells[sheet->rows - 1][c] = NULL;
+    }
+    sheet->row_heights[sheet->rows - 1] = 1; // Default height
+    
+    // Mark sheet for recalculation
+    sheet->needs_recalc = 1;
+}
+
+void sheet_delete_column(Sheet* sheet, int col) {
+    if (!sheet || col < 0 || col >= sheet->cols) return;
+    
+    // Clear and free all cells in the column to be deleted
+    for (int r = 0; r < sheet->rows; r++) {
+        if (sheet->cells[r][col]) {
+            cell_free(sheet->cells[r][col]);
+            sheet->cells[r][col] = NULL;
+        }
+    }
+    
+    // Shift all columns left from the deletion point
+    for (int c = col; c < sheet->cols - 1; c++) {
+        for (int r = 0; r < sheet->rows; r++) {
+            if (sheet->cells[r][c+1]) {
+                // Move cell from column c+1 to column c
+                sheet->cells[r][c] = sheet->cells[r][c+1];
+                sheet->cells[r][c]->col = c;
+                sheet->cells[r][c+1] = NULL;
+            }
+        }
+        // Move column width
+        sheet->col_widths[c] = sheet->col_widths[c+1];
+    }
+    
+    // Clear the last column and set default width
+    for (int r = 0; r < sheet->rows; r++) {
+        sheet->cells[r][sheet->cols - 1] = NULL;
+    }
+    sheet->col_widths[sheet->cols - 1] = 10; // Default width
+    
+    // Mark sheet for recalculation
+    sheet->needs_recalc = 1;
 }
 
 #endif // SHEET_H

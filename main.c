@@ -17,8 +17,8 @@ typedef enum {
     MODE_INSERT_STRING,
     MODE_INSERT_FORMULA,
     MODE_COMMAND,
-    MODE_RANGE_SELECT,  // NEW: Range selection mode
-    MODE_EDIT          // NEW: Edit existing cell mode
+    MODE_RANGE_SELECT,  // Range selection mode
+    MODE_EDIT          // Edit existing cell mode
 } AppMode;
 
 // Undo/Redo system
@@ -117,12 +117,12 @@ typedef struct {
     BOOL cursor_visible;
     DWORD cursor_blink_rate;
     
-    // NEW: Range selection state
+    // Range selection state
     BOOL range_selection_active;
     int range_start_row;
     int range_start_col;
     
-    // NEW: Undo/Redo system
+    // Undo/Redo system
     UndoBuffer undo_buffer;
 } AppState;
 
@@ -139,7 +139,7 @@ void app_cancel_input(AppState* state);
 void app_update_cursor_blink(AppState* state);
 void app_show_chart(AppState* state, ChartType type, const char* x_label, const char* y_label);
 
-// NEW: Range selection functions
+// Range selection functions
 void app_start_range_selection(AppState* state);
 void app_extend_range_selection(AppState* state, int row, int col);
 void app_finish_range_selection(AppState* state);
@@ -151,19 +151,19 @@ void app_paste_cell(AppState* state);
 void app_copy_to_system_clipboard(AppState* state);
 void app_paste_from_system_clipboard(AppState* state);
 
-// NEW: Range copy/paste operations
+// Range copy/paste operations
 void app_copy_range(AppState* state);
 void app_paste_range(AppState* state);
 
-// NEW: Chart display function
+// Chart display function
 void display_chart_popup(Console* console, Chart* chart, const char* title);
 
-// NEW: Formatting functions
+// Formatting functions
 void app_set_cell_format(AppState* state, DataFormat format, FormatStyle style);
 void app_cycle_date_format(AppState* state);
 void app_cycle_datetime_format(AppState* state);
 
-// NEW: Undo/Redo system functions
+// Undo/Redo system functions
 void undo_buffer_init(UndoBuffer* buffer);
 void undo_buffer_cleanup(UndoBuffer* buffer);
 void undo_save_cell_state(AppState* state, int row, int col, const char* description);
@@ -209,12 +209,12 @@ void app_init(AppState* state) {
     strcpy_s(state->status_message, sizeof(state->status_message), "Ready");
     state->running = TRUE;
     
-    // NEW: Initialize range selection
+    // Initialize range selection
     state->range_selection_active = FALSE;
     state->range_start_row = 0;
     state->range_start_col = 0;
     
-    // NEW: Initialize undo buffer
+    // Initialize undo buffer
     undo_buffer_init(&state->undo_buffer);
     
     state->cursor_blink_time = GetTickCount();
@@ -228,7 +228,7 @@ void app_init(AppState* state) {
 }
 
 void app_cleanup(AppState* state) {
-    // NEW: Cleanup undo buffer
+    // Cleanup undo buffer
     undo_buffer_cleanup(&state->undo_buffer);
     
     if (state->sheet) {
@@ -249,7 +249,7 @@ void app_update_cursor_blink(AppState* state) {
     }
 }
 
-// NEW: Start range selection
+// Start range selection
 void app_start_range_selection(AppState* state) {
     state->range_selection_active = TRUE;
     state->range_start_row = state->cursor_row;
@@ -258,7 +258,7 @@ void app_start_range_selection(AppState* state) {
     strcpy_s(state->status_message, sizeof(state->status_message), "Range selection started");
 }
 
-// NEW: Extend range selection
+// Extend range selection
 void app_extend_range_selection(AppState* state, int row, int col) {
     if (state->range_selection_active) {
         sheet_extend_range_selection(state->sheet, row, col);
@@ -270,13 +270,13 @@ void app_extend_range_selection(AppState* state, int row, int col) {
     }
 }
 
-// NEW: Finish range selection
+// Finish range selection
 void app_finish_range_selection(AppState* state) {
     state->range_selection_active = FALSE;
     strcpy_s(state->status_message, sizeof(state->status_message), "Range selected");
 }
 
-// NEW: Cancel range selection
+// Cancel range selection
 void app_cancel_range_selection(AppState* state) {
     state->range_selection_active = FALSE;
     sheet_clear_range_selection(state->sheet);
@@ -296,7 +296,7 @@ void app_render(AppState* state) {
     WORD cellColor = MAKE_COLOR(COLOR_WHITE, COLOR_BLACK);
     WORD selectedColor = MAKE_COLOR(COLOR_BLACK, COLOR_CYAN);
     WORD gridColor = MAKE_COLOR(COLOR_WHITE | COLOR_BRIGHT, COLOR_BLACK);
-    WORD rangeColor = MAKE_COLOR(COLOR_BLACK, COLOR_YELLOW);  // NEW: Range selection color
+    WORD rangeColor = MAKE_COLOR(COLOR_BLACK, COLOR_YELLOW);  // Range selection color
     
     // Clear back buffer
     for (int i = 0; i < con->width * con->height; i++) {
@@ -391,10 +391,10 @@ void app_render(AppState* state) {
                     WORD color = cellColor;
                     BOOL is_current_cell = (sheet_row == state->cursor_row && sheet_col == state->cursor_col);
                     
-                    // NEW: Check if cell is in range selection
+                    // Check if cell is in range selection
                     BOOL is_in_range = sheet_is_in_selection(state->sheet, sheet_row, sheet_col);
                     
-                    // NEW: Get cell for color formatting
+                    // Get cell for color formatting
                     Cell* cell = sheet_get_cell(state->sheet, sheet_row, sheet_col);
                     if (cell && (cell->text_color >= 0 || cell->background_color >= 0)) {
                         // Apply custom colors
@@ -464,7 +464,7 @@ void app_render(AppState* state) {
                     currentCell->data.formula.expression,
                     state->status_message);
         } else {
-            // NEW: Show cell formatting info
+            // Show cell formatting info
             if (currentCell && currentCell->format != FORMAT_GENERAL) {
                 const char* format_name = "General";
                 switch (currentCell->format) {
@@ -529,7 +529,7 @@ void app_start_input(AppState* state, AppMode mode) {
     }
 }
 
-// NEW: Start edit mode - pre-fills buffer with current cell content
+// Start edit mode - pre-fills buffer with current cell content
 void app_start_edit(AppState* state) {
     Cell* cell = sheet_get_cell(state->sheet, state->cursor_row, state->cursor_col);
     
@@ -635,7 +635,7 @@ void app_cancel_input(AppState* state) {
     strcpy_s(state->status_message, sizeof(state->status_message), "Cancelled");
 }
 
-// NEW: Set cell formatting
+// Set cell formatting
 void app_set_cell_format(AppState* state, DataFormat format, FormatStyle style) {
     undo_save_cell_state(state, state->cursor_row, state->cursor_col, "Format cell");
     
@@ -669,7 +669,7 @@ void app_set_cell_format(AppState* state, DataFormat format, FormatStyle style) 
     }
 }
 
-// NEW: Enhanced function to cycle through comprehensive date/time formats
+// Enhanced function to cycle through comprehensive date/time formats
 void app_cycle_datetime_format(AppState* state) {
     undo_save_cell_state(state, state->cursor_row, state->cursor_col, "Cycle datetime format");
     
@@ -726,7 +726,7 @@ void app_cycle_datetime_format(AppState* state) {
     }
 }
 
-// NEW: Function to cycle through date formats
+// Function to cycle through date formats
 void app_cycle_date_format(AppState* state) {
     undo_save_cell_state(state, state->cursor_row, state->cursor_col, "Cycle date format");
     
@@ -870,7 +870,7 @@ void app_execute_command(AppState* state, const char* command) {
                      "Failed to load %s", filename);
         }
     } 
-    // NEW: Formatting commands
+    // Formatting commands
     else if (strcmp(command, "format percentage") == 0) {
         app_set_cell_format(state, FORMAT_PERCENTAGE, 0);
     } else if (strcmp(command, "format currency") == 0) {
@@ -892,7 +892,7 @@ void app_execute_command(AppState* state, const char* command) {
     } else if (strcmp(command, "format general") == 0 || strcmp(command, "format number") == 0) {
         app_set_cell_format(state, FORMAT_GENERAL, 0);
     } 
-    // NEW: Range formatting commands
+    // Range formatting commands
     else if (strncmp(command, "range format ", 13) == 0) {
         if (!state->sheet->selection.is_active) {
             strcpy_s(state->status_message, sizeof(state->status_message), "No range selected");
@@ -938,7 +938,7 @@ void app_execute_command(AppState* state, const char* command) {
           sprintf_s(state->status_message, sizeof(state->status_message), 
                  "Range formatted as %s", format_type);
     } 
-    // NEW: Color commands for text
+    // Color commands for text
     else if (strncmp(command, "clrtx ", 6) == 0) {
         const char* color_str = command + 6;
         int color = parse_color(color_str);
@@ -978,7 +978,7 @@ void app_execute_command(AppState* state, const char* command) {
                      "Invalid color: %s", color_str);
         }
     }
-    // NEW: Color commands for background
+    // Color commands for background
     // Chart commands
     else if (strncmp(command, "line", 4) == 0) {
         char x_label[64] = "X";
@@ -1095,7 +1095,7 @@ void app_paste_cell(AppState* state) {
     }
 }
 
-// NEW: Copy range to clipboard
+// Copy range to clipboard
 void app_copy_range(AppState* state) {
     if (state->sheet->selection.is_active) {
         sheet_copy_range(state->sheet);
@@ -1105,7 +1105,7 @@ void app_copy_range(AppState* state) {
     }
 }
 
-// NEW: Paste range from clipboard
+// Paste range from clipboard
 void app_paste_range(AppState* state) {
     if (state->sheet->range_clipboard.is_active) {
         // Calculate the range that will be affected by the paste
@@ -1311,28 +1311,28 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                     if (key->ctrl && key->shift) {
                         app_copy_to_system_clipboard(state);
                     } else if (key->ctrl) {
-                        app_copy_range(state);  // NEW: Enhanced copy
+                        app_copy_range(state);  // Enhanced copy
                     }
                     break;
                 case 'v':
                     if (key->ctrl && key->shift) {
                         app_paste_from_system_clipboard(state);
                     } else if (key->ctrl) {
-                        app_paste_range(state);  // NEW: Enhanced paste
+                        app_paste_range(state);  // Enhanced paste
                     }
                     break;                case 'q':
                     if (key->ctrl) {
                         state->running = FALSE;
                     }
                     break;
-                // NEW: Undo/Redo support
+                // Undo/Redo support
                 case 'z':
                     if (key->ctrl && key->shift) {
                         redo_perform(state);
                     } else if (key->ctrl) {
                         undo_perform(state);
                     }
-                    break;// NEW: Date format cycling with Ctrl+#
+                    break;// Date format cycling with Ctrl+#
                 case '#':
                     if (key->ctrl) {
                         app_cycle_date_format(state);
@@ -1358,7 +1358,33 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                         app_set_cell_format(state, FORMAT_NUMBER, 0);
                     }
                     break;
-                // NEW: ESC to cancel range selection
+                // Insert row with Ctrl+Shift+I
+                case 'i':
+                case 'I':
+                    if (key->ctrl && key->shift && key->alt) {
+                        // Delete row with Ctrl+Shift+Alt+I
+                        sheet_delete_row(state->sheet, state->cursor_row);
+                        strcpy_s(state->status_message, sizeof(state->status_message), "Row deleted");
+                    } else if (key->ctrl && key->shift) {
+                        // Insert row with Ctrl+Shift+I
+                        sheet_insert_row(state->sheet, state->cursor_row);
+                        strcpy_s(state->status_message, sizeof(state->status_message), "Row inserted");
+                    }
+                    break;
+                // Insert column with Ctrl+Shift+O
+                case 'o':
+                case 'O':
+                    if (key->ctrl && key->shift && key->alt) {
+                        // Delete column with Ctrl+Shift+Alt+O
+                        sheet_delete_column(state->sheet, state->cursor_col);
+                        strcpy_s(state->status_message, sizeof(state->status_message), "Column deleted");
+                    } else if (key->ctrl && key->shift) {
+                        // Insert column with Ctrl+Shift+O
+                        sheet_insert_column(state->sheet, state->cursor_col);
+                        strcpy_s(state->status_message, sizeof(state->status_message), "Column inserted");
+                    }
+                    break;
+                // ESC to cancel range selection
                 case KEY_ESC:
                     if (state->range_selection_active) {
                         app_cancel_range_selection(state);
@@ -1582,7 +1608,7 @@ void app_handle_input(AppState* state, KeyEvent* key) {
     }
 }
 
-// NEW: Undo/Redo system implementation
+// Undo/Redo system implementation
 void undo_buffer_init(UndoBuffer* buffer) {
     buffer->current_index = 0;
     buffer->count = 0;

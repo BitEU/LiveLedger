@@ -83,6 +83,7 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **Cell Color Formatting**: Customizable text and background colors with 8 preset colors or hex values
 - **Dynamic Column/Row Resizing**: Adjustable column widths and row heights using Alt+Arrow keys
 - **Multi-Cell Resizing**: Resize multiple columns or rows simultaneously using range selection
+- **Insert/Delete Rows/Columns**: Insert and delete rows and columns at cursor position with keyboard shortcuts
 - **Formula dependencies**: Automatic dependency tracking and recalculation
 - **Error handling**: Division by zero, reference errors, parse errors, and lookup errors
 - **Cell formatting**: Width, precision, and alignment support
@@ -150,12 +151,17 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
   - **`Ctrl+Shift+3`** - Cycle through date/time formats (13 different options)
   - **`Ctrl+Shift+4`** - Format as currency
   - **`Ctrl+Shift+5`** - Format as percentage
-- **NEW: Column and Row Resizing**:
+- **Column and Row Resizing**:
   - **`Alt+Left Arrow`** - Decrease column width
   - **`Alt+Right Arrow`** - Increase column width
   - **`Alt+Up Arrow`** - Decrease row height
   - **`Alt+Down Arrow`** - Increase row height
   - **Works with range selection** - Resize multiple columns/rows at once
+- **Insert/Delete Rows and Columns**:
+  - **`Ctrl+Shift+I`** - Insert new row at cursor position (default height)
+  - **`Ctrl+Shift+O`** - Insert new column at cursor position (default width)
+  - **`Ctrl+Shift+Alt+I`** - Delete row at cursor position
+  - **`Ctrl+Shift+Alt+O`** - Delete column at cursor position
 - **`Ctrl+Q`** - Quick quit
 
 ### Command Mode
@@ -172,11 +178,11 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **`:format time 24hr`** - Apply 24-hour time formatting
 - **`:format time seconds`** - Apply time formatting with seconds
 
-**NEW: Color Commands:**
+**Color Commands:**
 - **`:clrtx <color>`** - Set text color (e.g., `:clrtx red`, `:clrtx #FF0000`)
 - **`:clrbg <color>`** - Set background color (e.g., `:clrbg yellow`, `:clrbg #FFFF00`)
 
-**NEW: Range Formatting Commands:**
+**Range Formatting Commands:**
 - **`:range format <type>`** - Apply formatting to selected range
   - `:range format percentage`
   - `:range format currency`
@@ -618,7 +624,6 @@ LiveLedger provides comprehensive error handling with clear error messages:
 - [ ] Graph/chart generation and visualization support like how GNUPlot does it
 - [ ] Conditional formatting
 - [ ] Replace VLOOKUP with XLOOKUP
-- [ ] Deleting and inserting rows and columns
 - [ ] Search and replace
 - [ ] Sorting and filtering
 - [ ] Print preview and printing

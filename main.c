@@ -1633,18 +1633,29 @@ void undo_buffer_cleanup(UndoBuffer* buffer) {
 }
 
 void undo_free_cell_data(CellUndoData* data) {
+    // Only free old_data if the type wasn't changed (to prevent use-after-free)
+    // If old_type == new_type and pointers are the same, the data is still in use
+    int types_match = (data->old_type == data->new_type);
+    
     if (data->old_type == CELL_STRING && data->old_data.string) {
-        free(data->old_data.string);
-        data->old_data.string = NULL;
+        // Only free if the pointer is different from new_data (wasn't reused)
+        if (!types_match || data->old_data.string != data->new_data.string) {
+            free(data->old_data.string);
+            data->old_data.string = NULL;
+        }
     }
     if (data->old_type == CELL_FORMULA) {
         if (data->old_data.formula.expression) {
-            free(data->old_data.formula.expression);
-            data->old_data.formula.expression = NULL;
+            if (!types_match || data->old_data.formula.expression != data->new_data.formula.expression) {
+                free(data->old_data.formula.expression);
+                data->old_data.formula.expression = NULL;
+            }
         }
         if (data->old_data.formula.cached_string) {
-            free(data->old_data.formula.cached_string);
-            data->old_data.formula.cached_string = NULL;
+            if (!types_match || data->old_data.formula.cached_string != data->new_data.formula.cached_string) {
+                free(data->old_data.formula.cached_string);
+                data->old_data.formula.cached_string = NULL;
+            }
         }
     }
     if (data->new_type == CELL_STRING && data->new_data.string) {
@@ -1690,6 +1701,10 @@ void undo_copy_cell_data(Cell* src, CellUndoData* dest) {
         case CELL_STRING:
             if (src->data.string) {
                 dest->old_data.string = _strdup(src->data.string);
+                if (!dest->old_data.string) {
+                    // Allocation failed, mark as empty
+                    dest->old_type = CELL_EMPTY;
+                }
             } else {
                 dest->old_data.string = NULL;
             }
@@ -1697,12 +1712,19 @@ void undo_copy_cell_data(Cell* src, CellUndoData* dest) {
         case CELL_FORMULA:
             if (src->data.formula.expression) {
                 dest->old_data.formula.expression = _strdup(src->data.formula.expression);
+                if (!dest->old_data.formula.expression) {
+                    // Allocation failed, mark as empty
+                    dest->old_type = CELL_EMPTY;
+                    memset(&dest->old_data, 0, sizeof(dest->old_data));
+                    break;
+                }
             } else {
                 dest->old_data.formula.expression = NULL;
             }
             dest->old_data.formula.cached_value = src->data.formula.cached_value;
             if (src->data.formula.cached_string) {
                 dest->old_data.formula.cached_string = _strdup(src->data.formula.cached_string);
+                // If this fails, just leave it NULL - not critical
             } else {
                 dest->old_data.formula.cached_string = NULL;
             }

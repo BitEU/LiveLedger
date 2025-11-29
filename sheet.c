@@ -49,6 +49,10 @@ Sheet* sheet_new(int rows, int cols) {
     sheet->rows = rows;
     sheet->cols = cols;
     sheet->name = _strdup("Sheet1");
+    if (!sheet->name) {
+        free(sheet);
+        return NULL;
+    }
     
     // Allocate cell array
     sheet->cells = (Cell***)calloc(rows, sizeof(Cell**));
@@ -183,11 +187,15 @@ void cell_free(Cell* cell) {
 
 void cell_clear(Cell* cell) {
     if (!cell) return;
-      // Free existing data
-    if (cell->type == CELL_STRING && cell->data.string) {
+      // Save the type and set to CELL_EMPTY first to prevent double-free on re-entry
+    CellType old_type = cell->type;
+    cell->type = CELL_EMPTY;
+    
+    // Free existing data
+    if (old_type == CELL_STRING && cell->data.string) {
         free(cell->data.string);
         cell->data.string = NULL;
-    } else if (cell->type == CELL_FORMULA) {
+    } else if (old_type == CELL_FORMULA) {
         if (cell->data.formula.expression) {
             free(cell->data.formula.expression);
             cell->data.formula.expression = NULL;
@@ -196,8 +204,7 @@ void cell_clear(Cell* cell) {
             free(cell->data.formula.cached_string);
             cell->data.formula.cached_string = NULL;
         }    }
-    
-    cell->type = CELL_EMPTY;
+
     // Keep formatting when clearing
 }
 
@@ -215,6 +222,10 @@ void cell_set_string(Cell* cell, const char* str) {
     cell_clear(cell);
     cell->type = CELL_STRING;
     cell->data.string = _strdup(str);
+    if (!cell->data.string) {
+        cell->type = CELL_EMPTY;  // Revert on allocation failure
+        return;
+    }
     cell->align = 0;  // Left align for strings
 }
 
@@ -223,6 +234,10 @@ void cell_set_formula(Cell* cell, const char* formula) {
       cell_clear(cell);
     cell->type = CELL_FORMULA;
     cell->data.formula.expression = _strdup(formula);
+    if (!cell->data.formula.expression) {
+        cell->type = CELL_EMPTY;  // Revert on allocation failure
+        return;
+    }
     cell->data.formula.cached_value = 0.0;
     cell->data.formula.cached_string = NULL;
     cell->data.formula.is_string_result = 0;
@@ -533,8 +548,11 @@ double func_if_enhanced(double condition, double true_val, double false_val,
             
             // Store in current cell if available
             if (g_current_evaluating_cell) {
-                g_current_evaluating_cell->data.formula.cached_string = _strdup(true_str);
-                g_current_evaluating_cell->data.formula.is_string_result = 1;
+                char* cached = _strdup(true_str);
+                if (cached) {
+                    g_current_evaluating_cell->data.formula.cached_string = cached;
+                    g_current_evaluating_cell->data.formula.is_string_result = 1;
+                }
             }
             
             return 1.0; // Return non-zero to indicate string result available
@@ -549,8 +567,11 @@ double func_if_enhanced(double condition, double true_val, double false_val,
             
             // Store in current cell if available
             if (g_current_evaluating_cell) {
-                g_current_evaluating_cell->data.formula.cached_string = _strdup(false_str);
-                g_current_evaluating_cell->data.formula.is_string_result = 1;
+                char* cached = _strdup(false_str);
+                if (cached) {
+                    g_current_evaluating_cell->data.formula.cached_string = cached;
+                    g_current_evaluating_cell->data.formula.is_string_result = 1;
+                }
             }
             
             return 0.0; // Return zero to indicate string result available
@@ -2203,8 +2224,9 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
                 *error = ERROR_PARSE;
                 return 0.0;
             }
-            strncpy_s(true_expr, sizeof(true_expr), true_start, true_len);
-            true_expr[true_len] = '\0';
+            // strncpy_s already handles truncation safely
+            strncpy_s(true_expr, sizeof(true_expr), true_start, (true_len < sizeof(true_expr) - 1) ? true_len : sizeof(true_expr) - 1);
+            true_expr[(true_len < sizeof(true_expr) - 1) ? true_len : sizeof(true_expr) - 1] = '\0';
             
             const char* true_ptr = true_expr;
             true_val = parse_arithmetic_expression(sheet, &true_ptr, error);
@@ -2267,8 +2289,9 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
                 *error = ERROR_PARSE;
                 return 0.0;
             }
-            strncpy_s(false_expr, sizeof(false_expr), false_start, false_len);
-            false_expr[false_len] = '\0';
+            // strncpy_s already handles truncation safely
+            strncpy_s(false_expr, sizeof(false_expr), false_start, (false_len < sizeof(false_expr) - 1) ? false_len : sizeof(false_expr) - 1);
+            false_expr[(false_len < sizeof(false_expr) - 1) ? false_len : sizeof(false_expr) - 1] = '\0';
             
             const char* false_ptr = false_expr;
             false_val = parse_arithmetic_expression(sheet, &false_ptr, error);

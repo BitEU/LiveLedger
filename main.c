@@ -1529,18 +1529,57 @@ void app_handle_input(AppState* state, KeyEvent* key) {
                     break;
                 case KEY_BACKSPACE:
                     if (state->input_pos > 0) {
+                        // Remove character before cursor and shift remaining text left
                         state->input_pos--;
-                        state->input_buffer[state->input_pos] = '\0';
+                        int len = strlen(state->input_buffer);
+                        memmove(&state->input_buffer[state->input_pos], 
+                               &state->input_buffer[state->input_pos + 1], 
+                               len - state->input_pos);
                     }
                     break;
                 default:
-                    if (isprint(key->key.ch) && state->input_pos < 255) {
-                        state->input_buffer[state->input_pos++] = key->key.ch;
-                        state->input_buffer[state->input_pos] = '\0';
+                    if (isprint(key->key.ch) && strlen(state->input_buffer) < 255) {
+                        // Insert character at cursor position and shift remaining text right
+                        int len = strlen(state->input_buffer);
+                        memmove(&state->input_buffer[state->input_pos + 1], 
+                               &state->input_buffer[state->input_pos], 
+                               len - state->input_pos + 1);
+                        state->input_buffer[state->input_pos] = key->key.ch;
+                        state->input_pos++;
                     }
                     break;
             }
-        }    }
+        } else {
+            // Handle special keys in input mode
+            switch (key->key.special) {
+                case KEY_LEFT:
+                    if (state->input_pos > 0) {
+                        state->input_pos--;
+                    }
+                    break;
+                case KEY_RIGHT:
+                    if (state->input_pos < (int)strlen(state->input_buffer)) {
+                        state->input_pos++;
+                    }
+                    break;
+                case KEY_HOME:
+                    state->input_pos = 0;
+                    break;
+                case KEY_END:
+                    state->input_pos = strlen(state->input_buffer);
+                    break;
+                case KEY_DELETE:
+                    // Delete character at cursor position
+                    if (state->input_pos < (int)strlen(state->input_buffer)) {
+                        int len = strlen(state->input_buffer);
+                        memmove(&state->input_buffer[state->input_pos], 
+                               &state->input_buffer[state->input_pos + 1], 
+                               len - state->input_pos);
+                    }
+                    break;
+            }
+        }
+    }
 }
 
 // NEW: Undo/Redo system implementation

@@ -34,6 +34,7 @@ extern FILE* debug_file;
 #define KEY_PGDN            0x51
 #define KEY_HOME            0x47
 #define KEY_END             0x4F
+#define KEY_DELETE          0x53
 #define KEY_F1              0x3B
 #define KEY_ESC             0x1B
 #define KEY_ENTER           0x0D

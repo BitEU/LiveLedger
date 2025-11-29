@@ -2231,6 +2231,163 @@ double parse_function(Sheet* sheet, const char** expr, ErrorType* error) {
         (*expr)++; // Skip closing parenthesis
         
         return func_power(base, exponent);
+    } else if (strcmp(func_name, "IF") == 0) {
+        // IF function: IF(condition, true_value, false_value)
+        skip_whitespace(expr);
+        
+        // Parse condition
+        double condition = evaluate_comparison(sheet, *expr, error);
+        if (*error != ERROR_NONE) return 0.0;
+        
+        // Find the comma after condition
+        int paren_depth = 0;
+        while (**expr) {
+            if (**expr == '(') paren_depth++;
+            else if (**expr == ')') paren_depth--;
+            else if (**expr == ',' && paren_depth == 0) break;
+            (*expr)++;
+        }
+        
+        if (**expr != ',') {
+            *error = ERROR_PARSE;
+            return 0.0;
+        }
+        (*expr)++; // Skip comma
+        
+        // Parse true value (can be string or number)
+        skip_whitespace(expr);
+        double true_val = 0.0;
+        char true_str[256] = {0};
+        int has_true_str = 0;
+        
+        if (**expr == '"') {
+            // String literal
+            (*expr)++; // Skip opening quote
+            int j = 0;
+            while (**expr && **expr != '"' && j < 255) {
+                if (**expr == '"' && *(*expr + 1) == '"') {
+                    // Escaped quote
+                    true_str[j++] = '"';
+                    (*expr) += 2;
+                } else {
+                    true_str[j++] = **expr;
+                    (*expr)++;
+                }
+            }
+            if (**expr == '"') {
+                (*expr)++; // Skip closing quote
+                true_str[j] = '\0';
+                has_true_str = 1;
+            } else {
+                *error = ERROR_PARSE;
+                return 0.0;
+            }
+        } else {
+            // Numeric expression - need to find the comma
+            const char* true_start = *expr;
+            paren_depth = 0;
+            while (**expr) {
+                if (**expr == '(') paren_depth++;
+                else if (**expr == ')') paren_depth--;
+                else if (**expr == ',' && paren_depth == 0) break;
+                (*expr)++;
+            }
+            
+            // Temporarily null-terminate and parse
+            char true_expr[256];
+            int true_len = (int)(*expr - true_start);
+            if (true_len >= sizeof(true_expr)) {
+                *error = ERROR_PARSE;
+                return 0.0;
+            }
+            strncpy_s(true_expr, sizeof(true_expr), true_start, true_len);
+            true_expr[true_len] = '\0';
+            
+            const char* true_ptr = true_expr;
+            true_val = parse_arithmetic_expression(sheet, &true_ptr, error);
+            if (*error != ERROR_NONE) return 0.0;
+        }
+        
+        // Expect comma
+        skip_whitespace(expr);
+        if (**expr != ',') {
+            *error = ERROR_PARSE;
+            return 0.0;
+        }
+        (*expr)++; // Skip comma
+        
+        // Parse false value (can be string or number)
+        skip_whitespace(expr);
+        double false_val = 0.0;
+        char false_str[256] = {0};
+        int has_false_str = 0;
+        
+        if (**expr == '"') {
+            // String literal
+            (*expr)++; // Skip opening quote
+            int j = 0;
+            while (**expr && **expr != '"' && j < 255) {
+                if (**expr == '"' && *(*expr + 1) == '"') {
+                    // Escaped quote
+                    false_str[j++] = '"';
+                    (*expr) += 2;
+                } else {
+                    false_str[j++] = **expr;
+                    (*expr)++;
+                }
+            }
+            if (**expr == '"') {
+                (*expr)++; // Skip closing quote
+                false_str[j] = '\0';
+                has_false_str = 1;
+            } else {
+                *error = ERROR_PARSE;
+                return 0.0;
+            }
+        } else {
+            // Numeric expression - need to find the closing paren
+            const char* false_start = *expr;
+            paren_depth = 0;
+            while (**expr) {
+                if (**expr == '(') paren_depth++;
+                else if (**expr == ')') {
+                    if (paren_depth == 0) break;
+                    paren_depth--;
+                }
+                (*expr)++;
+            }
+            
+            // Temporarily null-terminate and parse
+            char false_expr[256];
+            int false_len = (int)(*expr - false_start);
+            if (false_len >= sizeof(false_expr)) {
+                *error = ERROR_PARSE;
+                return 0.0;
+            }
+            strncpy_s(false_expr, sizeof(false_expr), false_start, false_len);
+            false_expr[false_len] = '\0';
+            
+            const char* false_ptr = false_expr;
+            false_val = parse_arithmetic_expression(sheet, &false_ptr, error);
+            if (*error != ERROR_NONE) return 0.0;
+        }
+        
+        // Expect closing parenthesis
+        skip_whitespace(expr);
+        if (**expr != ')') {
+            *error = ERROR_PARSE;
+            return 0.0;
+        }
+        (*expr)++; // Skip closing parenthesis
+        
+        // Call IF function
+        if (has_true_str || has_false_str) {
+            return func_if_enhanced(condition, true_val, false_val,
+                                   has_true_str ? true_str : NULL,
+                                   has_false_str ? false_str : NULL);
+        } else {
+            return func_if(condition, true_val, false_val);
+        }
     }
       *error = ERROR_PARSE;
     return 0.0;

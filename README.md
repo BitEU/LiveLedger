@@ -130,7 +130,10 @@ A powerful, vi-style spreadsheet application that runs entirely in the Windows t
 - **`:`** - Enter command mode
 - **`Enter`** - Confirm input
 - **`Escape`** - Cancel input
-- **`Backspace`** - Delete character during input
+- **`Backspace`** - Delete character before cursor
+- **`Delete`** - Delete character at cursor
+- **`Left/Right Arrow`** - Move cursor within input
+- **`Home/End`** - Jump to start/end of input
 
 ### Cell Operations
 - **`x`** - Clear current cell
